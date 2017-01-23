@@ -1,0 +1,36 @@
+{
+  "name": "qd-guard",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shastel/_qdOauth.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Shastel/_qdOauth/issues"
+  },
+  "homepage": "https://github.com/Shastel/_qdOauth#readme",
+  "dependencies": {
+    "body-parser": "^1.16.0",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.14.0",
+    "express-session": "^1.15.0",
+    "passport": "^0.3.2",
+    "passport-github": "^1.1.0",
+    "uws": "^0.12.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.14.0",
+    "eslint-config-airbnb-base": "^11.0.1",
+    "eslint-plugin-import": "^2.2.0",
+    "husky": "^0.13.0",
+    "nodemon": "^1.11.0"
+  }
+}
