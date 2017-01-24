@@ -1,11 +1,11 @@
 const GitHubStrategy = require('passport-github').Strategy;
 
-const config = require('../../config.secret.json');
+const config = require('../config');
 
 module.exports = new GitHubStrategy({
     clientID: config.GITHUB_CLIENT_ID,
     clientSecret: config.GITHUB_CLIENT_SECRET,
-    callbackURL: 'http://127.0.0.1:3000/auth/github/cb'
+    callbackURL: config.GITHUB_CALLBACK_URL,
 },
   (accessToken, refreshToken, profile, cb) => {
       return cb(null, profile);

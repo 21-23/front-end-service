@@ -4,6 +4,7 @@ const passport = require('passport');
 const gitHubStrategy = require('./stategies/github-strategy');
 
 const app = express();
+const config = require('./config');
 
 app.use(require('cookie-parser')());
 app.use(require('express-session')({
@@ -42,7 +43,7 @@ app.get('/game.html', (req, res, next) => {
     res.redirect('/login.html');
 });
 
-app.use(express.static(path.resolve('_qd-ui/dist/')));
+app.use(express.static(path.resolve(__dirname, '/static')));
 
 app.get('/', (req, res) => {
     res.redirect('/login.html');
