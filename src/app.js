@@ -4,7 +4,6 @@ const passport = require('passport');
 const gitHubStrategy = require('./stategies/github-strategy');
 
 const app = express();
-const config = require('./config');
 
 app.use(require('cookie-parser')());
 app.use(require('express-session')({
