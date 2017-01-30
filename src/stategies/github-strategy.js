@@ -1,6 +1,6 @@
 const GitHubStrategy = require('passport-github').Strategy;
 
-const config = require('../config');
+const config = require('../../config.secret');
 
 module.exports = new GitHubStrategy({
     clientID: config.GITHUB_CLIENT_ID,
