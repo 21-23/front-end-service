@@ -6,6 +6,6 @@ module.exports = {
         return this[value];
     },
     set(k, v) {
-        return this[k] = v;
+        this[k] = v;
     }
 };
