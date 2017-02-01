@@ -2,6 +2,11 @@ const express = require('express');
 const path = require('path');
 const passport = require('passport');
 const gitHubStrategy = require('./stategies/github-strategy');
+const setUidCookieMiddleware = require('./utils/setCookieMiddleware')();
+const mongoose = require('mongoose');
+
+mongoose.connect('mongodb://127.0.0.1/fe-db');
+mongoose.Promise = global.Promise;
 
 const app = express();
 
@@ -13,12 +18,12 @@ app.use(require('express-session')({
 }));
 app.use(require('body-parser').urlencoded({ extended: true }));
 
-
 passport.serializeUser((user, done) => {
     done(null, user);
 });
 
 passport.deserializeUser((user, done) => {
+    // get user from cache or from db
     done(null, user);
 });
 
@@ -29,21 +34,24 @@ app.use(passport.session());
 
 app.get('/auth/github', passport.authenticate('github'));
 
-app.get('/auth/github/cb',
+app.get('/cb',
   passport.authenticate('github',
-  { failureRedirect: '/login.html', successRedirect: '/game.html' }
-));
+  { failureRedirect: '/login.html' }),
+  setUidCookieMiddleware,
+  (req, res) => {
+      res.redirect('/game.html');
+  }
+);
 
 app.get('/game.html', (req, res, next) => {
-    console.log(req.cookie);
     if (req.isAuthenticated()) {
         return next();
     }
     res.redirect('/login.html');
 });
 
-app.use(express.static(path.resolve(__dirname, '/static')));
-
+const staticPath = path.resolve(__dirname, '../static/');
+app.use(express.static(staticPath));
 app.get('/', (req, res) => {
     res.redirect('/login.html');
 });
