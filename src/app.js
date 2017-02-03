@@ -3,10 +3,6 @@ const path = require('path');
 const passport = require('passport');
 const gitHubStrategy = require('./stategies/github-strategy');
 const setUidCookieMiddleware = require('./utils/setCookieMiddleware')();
-const mongoose = require('mongoose');
-
-mongoose.connect('mongodb://127.0.0.1/fe-db');
-mongoose.Promise = global.Promise;
 
 const app = express();
 
