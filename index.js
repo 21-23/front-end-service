@@ -8,11 +8,11 @@ const port = config.get('PORT');
 app.set('port', port);
 
 const server = http.createServer(app);
-initWSServer({ port: config.get('WS_PORT') });
 
 server.listen(port, () => {
     console.log('Server is ready on', port);
 
+    initWSServer({ port: config.get('WS_PORT') });
     mongoose.promise = global.Promise;
     mongoose.connect(config.get('MONGO_URI'));
 });

@@ -12,6 +12,7 @@ config.defaults({
     PORT: 3000,
     WS_PORT: 8888,
     ARNAUX_URL: 'ws://',
+    'session-secret': 'keyboard cat',
 });
 
 module.exports = config;

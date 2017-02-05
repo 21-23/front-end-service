@@ -3,12 +3,12 @@ const path = require('path');
 const passport = require('passport');
 const gitHubStrategy = require('./stategies/github-strategy');
 const setUidCookieMiddleware = require('./utils/setCookieMiddleware')();
-
+const config = require('../config');
 const app = express();
 
 app.use(require('cookie-parser')());
 app.use(require('express-session')({
-    secret: 'keyboard cat',
+    secret: config.get('session-secret'),
     saveUninitialized: true,
     resave: true,
 }));
