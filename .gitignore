@@ -3,3 +3,4 @@ _qd-ui
 *.secret.json
 *ui/
 static/
+.DS_Store

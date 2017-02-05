@@ -30,4 +30,24 @@ const User = new Schema({
     }
 });
 
+User.statics.findOrCreate = function (profile) {
+    const user = new this(profile);
+
+    return new Promise((resolve, reject) => {
+        this.findOne(profile, (err, result) => {
+            if (err) {
+                console.log('save err');
+                reject(err);
+                return;
+            }
+
+            if (!result) {
+                console.log('save new user');
+                return user.save();
+            }
+            resolve(result);
+        });
+    });
+};
+
 module.exports = mongoose.model('user', User);
