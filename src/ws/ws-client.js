@@ -11,7 +11,7 @@ const phoenix = createPhoenix(Socket, {
 phoenix
     .on('connected', () => {
         console.log('Connected to ARNAUX');
-        const checkinMessage = arnaux.checkin('fe-service');
+        const checkinMessage = arnaux.checkin('front-service');
         phoenix.send(checkinMessage);
     })
     .on('disconnected', () => {
