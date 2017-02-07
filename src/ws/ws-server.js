@@ -31,13 +31,14 @@ function registerConnection(ws, sessionId, participantId, isMaster) {
     }
 }
 
-function handleClientClose(code, message) {
-    this.removeAllListeners();
+function handleClientClose(ws, code, message) {
+    ws.removeAllListeners();
 
-    const [sessionId, participantId] = connections.get(this); // TODO: is destructuring safe?
+    const [sessionId, participantId] = connections.get(ws); // TODO: is destructuring safe?
     const session = sessions.get(sessionId);
     session.players.delete(participantId); // TODO: more smart remove?
     session.gameMaster.delete(participantId);
+    connections.delete(ws);
 }
 
 function sendSolution(connection, input) {
@@ -74,7 +75,7 @@ function handleNewConnection(ws) {
         .then(() => {
             registerConnection(ws, 'rsconf-2017', uid, false);
             ws.on('message', handleClientMessage);
-            ws.once('close', handleClientClose);
+            ws.once('close', handleClientClose.bind(null, ws));
         })
         .catch(() => {
             console.warn('[front-service]', 'Unauthorized socket connection');
