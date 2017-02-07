@@ -29,5 +29,9 @@ module.exports = {
             }
             return user;
         });
+    },
+
+    isMaster(user) {
+        return user.isMaster;
     }
 };
