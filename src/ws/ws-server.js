@@ -9,29 +9,70 @@ const { isMaster, get } = require('../services/user-service');
 const Server = WebSocketClient.Server;
 const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
 
-const sessions = new Map();
+const sessions = new Map([['rsconf-2017', { players: new Map(), gameMaster: new Map() }]]);
+const connections = new Map();
 
 function verifyConnection() {
     return Promise.resolve();
 }
 
+function registerConnection(ws, sessionId, participantId, isMaster) {
+    const session = sessions.get(sessionId);
+
+    if (!session) {
+        return console.warn('[front-service]', 'Session is not opened yet');
+    }
+
+    connections.set(ws, [sessionId, participantId]);
+    if (isMaster) {
+        session.gameMaster.set(participantId, ws);
+    } else {
+        session.players.set(participantId, ws);
+    }
+}
+
 function handleClientClose(code, message) {
-    // TODO: clean up user and their socket
     this.removeAllListeners();
+
+    const [sessionId, participantId] = connections.get(this); // TODO: is destructuring safe?
+    const session = sessions.get(sessionId);
+    session.players.delete(participantId); // TODO: more smart remove?
+    session.gameMaster.delete(participantId);
+}
+
+function sendSolution(connection, input) {
+    const [sessionId, participantId] = connections.get(connection);
+    const serverMessage = createMessage('state-service', { // TODO: create "constructor"
+        name: 'participant.input',
+        input,
+        sessionId,
+        participantId,
+        timestamp: Date.now()
+    });
+
+    phoenix.send(serverMessage);
 }
 
 function handleClientMessage(incomingMessage) {
     const { message } = parseMessage(incomingMessage);
 
     console.log('[front-service]', 'Client message', message);
+
+    switch (message.name) {
+        case 'solution':
+            return sendSolution(this, message.input);
+        default:
+            return console.log('[front-service]', 'Unknown client message');
+    }
 }
 
 function handleNewConnection(ws) {
     console.log('[WS-Server]: Connection', ws.upgradeReq.headers.cookie);
     const uid = '9eedf38350fe4402';
 
-    verifyConnection()
+    verifyConnection() // TODO: parse cookies
         .then(() => {
+            registerConnection(ws, 'rsconf-2017', uid, false);
             ws.on('message', handleClientMessage);
             ws.once('close', handleClientClose);
         })
