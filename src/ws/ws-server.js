@@ -1,42 +1,79 @@
-const { Server } = require('uws');
-const emitter = require('./emitter');
+const WebSocketClient = require('uws');
+
+const createPhoenix = require('phoenix');
+const { createMessage, parseMessage, arnaux } = require('message-factory');
+
+const config = require('../../config');
 const { isMaster, get } = require('../services/user-service');
 
-module.exports = function ({ port }) {
+const Server = WebSocketClient.Server;
+const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
+
+const sessions = new Map();
+
+function verifyConnection() {
+    return Promise.resolve();
+}
+
+function handleClientClose(code, message) {
+    // TODO: clean up user and their socket
+    this.removeAllListeners();
+}
+
+function handleClientMessage(incomingMessage) {
+    const { message } = parseMessage(incomingMessage);
+
+    console.log('[front-service]', 'Client message', message);
+}
+
+function handleNewConnection(ws) {
+    console.log('[WS-Server]: Connection', ws.upgradeReq.headers.cookie);
+    const uid = '9eedf38350fe4402';
+
+    verifyConnection()
+        .then(() => {
+            ws.on('message', handleClientMessage);
+            ws.once('close', handleClientClose);
+        })
+        .catch(() => {
+            console.warn('[front-service]', 'Unauthorized socket connection');
+            ws.close(); // TODO: error code?
+        });
+
+    // get(uid)
+    //     .then((user) => {
+    //         if (isMaster(user)) {
+
+    //         }
+
+    //         return user;
+    //     });
+}
+
+function processServerMessage(message) {
+    console.log('[front-service]', 'Message from server:', message);
+}
+
+function createWsServer({ port }) {
     const wss = new Server({ port });
 
-    wss.on('connection', (socket) => {
-        console.log('[WS-Server]: Connection', socket.upgradeReq.headers.cookie);
-        const uid = '9eedf38350fe4402';
+    console.log('[front-service]', 'Ws Server is ready on', port);
 
-        get(uid)
-            .then((user) => {
-                if (isMaster(user)) {
-                    // define all eventnames
-                    emitter.on('MASTER_MESSAGE', (message) => {
-                        socket && socket.send(message); //eslint-disable-line
-                    });
-                }
+    wss.on('connection', handleNewConnection);
+}
 
-                return user;
-            })
-            .then(user => socket.send(user));
+phoenix
+    .on('connected', () => {
+        console.log('[front-service]', 'phoenix is alive');
+        phoenix.send(arnaux.checkin(config.get('ARNAUX_IDENTITY')));
+    })
+    .on('disconnected', () => {
+        console.error('[front-service]', 'phoenix disconnected');
+    })
+    .on('message', (incomingMessage) => {
+        const { message } = parseMessage(incomingMessage.data);
 
-        socket.send(JSON.stringify());
-        socket.on('message', (message) => {
-            console.log('incoming message', message);
-            emitter.emit('CLIENT_MESSAGE', message, uid);
-
-            emitter.on(uid, () => {
-                socket.send(4);
-            });
-        });
-
-        socket.on('close', () => {
-            // unsubscribe
-            emitter.removeAllListeners(uid);
-        });
+        processServerMessage(message);
     });
 
-    return wss;
-};
+module.exports = createWsServer;

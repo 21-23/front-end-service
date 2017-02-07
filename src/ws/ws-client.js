@@ -23,6 +23,11 @@ phoenix
     });
 
 emitter.on('CLIENT_MESSAGE', (input, uid) => {
-    const message = createMessage('arnaux', { type: 'solution', input, uid });
+    const message = createMessage('state-service', {
+        name: 'participant.input',
+        input,
+        sessionId: '', // TODO
+        participantId: uid, // TODO
+    });
     phoenix.send(message);
 });
