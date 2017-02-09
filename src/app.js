@@ -4,6 +4,7 @@ const passport = require('passport');
 const gitHubStrategy = require('./stategies/github-strategy');
 const setUidCookieMiddleware = require('./utils/setCookieMiddleware')();
 const config = require('../config');
+
 const app = express();
 
 app.use(require('cookie-parser')());
@@ -40,6 +41,9 @@ app.get('/cb',
 );
 
 app.get('/game.html', (req, res, next) => {
+    if (!req.query.sessionId) {
+        return res.redirect('/');
+    }
     if (req.isAuthenticated()) {
         return next();
     }
