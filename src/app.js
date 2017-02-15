@@ -50,6 +50,16 @@ app.get('/game.html', (req, res, next) => {
     res.redirect('/login.html');
 });
 
+app.get('/game-master.html', (req, res, next) => {
+    if (!req.query.sessionId) {
+        return res.redirect('/');
+    }
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login.html');
+});
+
 const staticPath = path.resolve(__dirname, '../static/');
 app.use(express.static(staticPath));
 app.get('/', (req, res) => {
