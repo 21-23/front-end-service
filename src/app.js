@@ -32,12 +32,14 @@ app.use(passport.session());
 app.get('/auth/github', passport.authenticate('github'));
 
 app.get('/cb',
-  passport.authenticate('github',
-  { failureRedirect: '/login.html' }),
-  setUidCookieMiddleware,
-  (req, res) => {
-      res.redirect('/game.html');
-  }
+    passport.authenticate('github',
+    { failureRedirect: '/login.html' }),
+    setUidCookieMiddleware,
+    (req, res) => {
+        const returnUrl = req.cookies['returnUrl'];
+
+        res.redirect(returnUrl || '/');
+    }
 );
 
 app.get('/game.html', (req, res, next) => {
@@ -47,6 +49,8 @@ app.get('/game.html', (req, res, next) => {
     if (req.isAuthenticated()) {
         return next();
     }
+
+    res.cookie('returnUrl', req.originalUrl);
     res.redirect('/login.html');
 });
 
@@ -57,13 +61,15 @@ app.get('/game-master.html', (req, res, next) => {
     if (req.isAuthenticated()) {
         return next();
     }
+
+    res.cookie('returnUrl', req.originalUrl);
     res.redirect('/login.html');
 });
 
 const staticPath = path.resolve(__dirname, '../static/');
 app.use(express.static(staticPath));
 app.get('/', (req, res) => {
-    res.redirect('/login.html');
+    res.redirect('/index.html');
 });
 
 app.use((req, res, next) => {
