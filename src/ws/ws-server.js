@@ -4,118 +4,88 @@ const createPhoenix = require('phoenix');
 const { createMessage, parseMessage, arnaux } = require('message-factory');
 
 const config = require('../../config');
-const { isMaster, get } = require('../services/user-service');
 
 const Server = WebSocketClient.Server;
 const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
 
-const sessions = new Map([['rsconf-2017', { players: new Map(), gameMaster: new Map() }]]);
-const connections = new Map();
+const createRoom = require('./room');
 
-function verifyConnection() {
-    return Promise.resolve();
+const lobby = createRoom();
+
+function verifyAuth(ws) {
+    // TODO: verify(ws.upgradeReq)
+    // ensure both params: participantId and sessionId
+    return Promise.resolve(['part-icip-antI-d', 'session-id']);
 }
 
-function registerConnection(ws, sessionId, participantId, isMaster) {
-    const session = sessions.get(sessionId);
+// -------------- Connection management --------------
 
-    if (!session) {
-        return console.warn('[front-service]', 'Session is not opened yet');
-    }
-
-    connections.set(ws, [sessionId, participantId]);
-    if (isMaster) {
-        session.gameMaster.set(participantId, ws);
-    } else {
-        session.players.set(participantId, ws);
-    }
-}
-
-function handleClientClose(ws, code, message) {
+function clearConnection(ws) {
+    // TODO: clear onerror?
     ws.removeAllListeners();
-
-    const [sessionId, participantId] = connections.get(ws); // TODO: is destructuring safe?
-    const session = sessions.get(sessionId);
-    session.players.delete(participantId); // TODO: more smart remove?
-    session.gameMaster.delete(participantId);
-    connections.delete(ws);
 }
 
-function sendSolution(connection, input) {
-    const [sessionId, participantId] = connections.get(connection);
-    const serverMessage = createMessage('state-service', { // TODO: create "constructor"
-        name: 'participant.input',
-        input,
-        sessionId,
-        participantId,
-        timestamp: Date.now()
-    });
+function rejectConnection(ws) {
+    clearConnection(ws);
 
-    phoenix.send(serverMessage);
+    ws.close(); // TODO: error code to prevent phoenix to reconnect
 }
 
-function handleClientMessage(incomingMessage) {
-    const { message } = parseMessage(incomingMessage);
+function removeFromLobby(ws, participantId, sessionId) {
+    lobby.remove(ws, participantId, sessionId);
+    rejectConnection(ws);
+}
 
-    console.log('[front-service]', 'Client message', message);
+function addToLobby(ws, participantId, sessionId) {
+    const participant = lobby.get(ws, participantId, sessionId);
 
-    switch (message.name) {
-        case 'solution':
-            return sendSolution(this, message.input);
-        default:
-            return console.log('[front-service]', 'Unknown client message');
+    if (participant) {
+        // if there is already such participant in lobby
+        // remove the existing and add a new one
+        removeFromLobby(...participant);
     }
+
+    lobby.add(ws, participantId, sessionId);
+    ws.once('close', () => {
+        // do not pass participantId and sessionId
+        // a new connection with this info may already be added
+        // need to search by ws only
+        removeFromLobby(ws);
+    });
 }
 
-function handleNewConnection(ws) {
-    console.log('[WS-Server]: Connection', ws.upgradeReq.headers.cookie);
-    const uid = '9eedf38350fe4402';
-
-    verifyConnection() // TODO: parse cookies
-        .then(() => {
-            registerConnection(ws, 'rsconf-2017', uid, false);
-            ws.on('message', handleClientMessage);
-            ws.once('close', handleClientClose.bind(null, ws));
+function processNewConnection(ws) {
+    return verifyAuth(ws)
+        .then(([participantId, sessionId]) => {
+            return addToLobby(ws, participantId, sessionId);
         })
-        .catch(() => {
-            console.warn('[front-service]', 'Unauthorized socket connection');
-            ws.close(); // TODO: error code?
+        .catch((error) => {
+            console.error('[front-service]', '[ws-server]', 'New connection rejected', error);
+
+            rejectConnection(ws);
         });
-
-    // get(uid)
-    //     .then((user) => {
-    //         if (isMaster(user)) {
-
-    //         }
-
-    //         return user;
-    //     });
-}
-
-function processServerMessage(message) {
-    console.log('[front-service]', 'Message from server:', message);
 }
 
 function createWsServer({ port }) {
-    const wss = new Server({ port });
+    const wss = new Server({ port }, () => {
+        console.log('[front-service]', '[ws-server]', 'Server is ready on', port);
 
-    console.log('[front-service]', 'Ws Server is ready on', port);
-
-    wss.on('connection', handleNewConnection);
+        wss.on('connection', processNewConnection);
+    });
 }
 
 phoenix
     .on('connected', () => {
-        console.log('[front-service]', 'phoenix is alive');
+        console.log('[front-service]', '[ws-server]', 'phoenix is alive');
         phoenix.send(arnaux.checkin(config.get('ARNAUX_IDENTITY')));
     })
     .on('disconnected', () => {
-        console.error('[front-service]', 'phoenix disconnected');
+        console.error('[front-service]', '[ws-server]', 'phoenix disconnected');
     })
     .on('message', (incomingMessage) => {
         const { message } = parseMessage(incomingMessage.data);
 
-        processServerMessage(message);
+        // processServerMessage(message);
     });
 
 module.exports = createWsServer;
