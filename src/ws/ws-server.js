@@ -27,8 +27,8 @@ function clearConnection(ws) {
 
 function rejectConnection(ws) {
     clearConnection(ws);
-
-    ws.close(); // TODO: error code to prevent phoenix to reconnect
+    // prvent client phoenix from reconnect
+    ws.close(4500);
 }
 
 function removeFromLobby(ws, participantId, sessionId) {
