@@ -8,9 +8,9 @@ const config = require('../../config');
 const Server = WebSocketClient.Server;
 const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
 
-const createRoom = require('./room');
+const createLobby = require('./lobby');
 
-const lobby = createRoom();
+const lobby = createLobby();
 
 function verifyAuth(ws) {
     // TODO: verify(ws.upgradeReq)

@@ -40,13 +40,8 @@ function ensureSession(sessions, sessionId) {
 }
 
 function add(connections, sessions, ws, participantId, sessionId) {
-    const existing = find(connections, sessions, ws, participantId, sessionId);
-
-    if (existing) {
-        return false;
-    }
-
     const session = ensureSession(sessions, sessionId);
+
     session.set(participantId, ws);
     connections.set(ws, [participantId, sessionId]);
 
