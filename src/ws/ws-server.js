@@ -9,8 +9,10 @@ const Server = WebSocketClient.Server;
 const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
 
 const createLobby = require('./lobby');
+const createHall = require('./hall');
 
 const lobby = createLobby();
+const hall = createHall();
 
 function verifyAuth(ws) {
     // TODO: verify(ws.upgradeReq)
@@ -54,16 +56,65 @@ function addToLobby(ws, participantId, sessionId) {
     });
 }
 
+function removeFromHall(ws, participantId, sessionId, role) {
+    hall.remove(ws, participantId, sessionId, role);
+    rejectConnection(ws);
+}
+
+function addToHall(ws, participantId, sessionId, role) {
+    const participant = hall.get(ws, participantId, sessionId, role);
+
+    if (participant) {
+        // if there is already such participant in the hall
+        // remove the existing and add a new one
+        removeFromHall(...participant);
+    }
+
+    hall.add(ws, participantId, sessionId, role);
+    ws.once('close', () => {
+        // do not pass participantId and sessionId
+        // a new connection with this info may already be added
+        // need to search by ws only
+        removeFromHall(ws);
+    });
+}
+
+function participantIdentified(participantId, sessionId, role) {
+    const participant = lobby.get(null, participantId, sessionId);
+
+    if (!participant) {
+        return console.warn('[front-service]', '[ws-server]', 'Unknown participant identification', participantId);
+    }
+
+    lobby.remove(...participant);
+    clearConnection(participant[0]);
+    addToHall(...participant, role);
+
+    hall.getMasters(sessionId).forEach(([ws]) => {
+        ws.send(createMessage('_qd-ui', { name: 'new-user', participantId, /* displayName */ }));
+    });
+}
+
 function processNewConnection(ws) {
     return verifyAuth(ws)
         .then(([participantId, sessionId]) => {
-            return addToLobby(ws, participantId, sessionId);
+            addToLobby(ws, participantId, sessionId);
+            phoenix.send(createMessage('state-service', { name: 'user-connected', participantId, sessionId }));
         })
         .catch((error) => {
             console.error('[front-service]', '[ws-server]', 'New connection rejected', error);
 
             rejectConnection(ws);
         });
+}
+
+function processServerMessage(message) {
+    switch (message.name) {
+        case 'user-connected':
+            return participantIdentified(message.participantId, message.sessionId, message.role);
+        default:
+            return console.warn('[front-service]', '[ws-server]', 'Unknown message from server');
+    }
 }
 
 function createWsServer({ port }) {
@@ -85,7 +136,7 @@ phoenix
     .on('message', (incomingMessage) => {
         const { message } = parseMessage(incomingMessage.data);
 
-        // processServerMessage(message);
+        processServerMessage(message);
     });
 
 module.exports = createWsServer;

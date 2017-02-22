@@ -133,6 +133,6 @@ module.exports = function () {
         getMasters: getParticipants.bind(null, connections, sessions, 'game-master'),
         getPlayers: getParticipants.bind(null, connections, sessions, 'player'),
         getAll: getAll.bind(null, connections, sessions),
-        find: find.bind(null, connections, sessions),
+        get: find.bind(null, connections, sessions),
     };
 };
