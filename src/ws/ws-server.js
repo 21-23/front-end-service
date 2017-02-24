@@ -1,3 +1,5 @@
+// TODO: use action creators for messages
+
 const WebSocketClient = require('uws');
 
 const createPhoenix = require('phoenix');
@@ -33,6 +35,27 @@ function rejectConnection(ws) {
     ws.close(4500);
 }
 
+// -------------- Send messages helpers --------------
+
+function sendToGameMasters(sessionId, message) {
+    hall.getMasters(sessionId).forEach(([ws]) => {
+        ws.send(message);
+    });
+}
+
+function sendToPlayers(sessionId, message) {
+    hall.getPlayers(sessionId).forEach(([ws]) => {
+        ws.send(message);
+    });
+}
+
+function sendToSession(sessionId, message) {
+    sendToGameMasters(sessionId, message);
+    sendToPlayers(sessionId, message);
+}
+
+// -------------- Sessions state management --------------
+
 function removeFromLobby(ws, participantId, sessionId) {
     lobby.remove(ws, participantId, sessionId);
     rejectConnection(ws);
@@ -45,6 +68,7 @@ function addToLobby(ws, participantId, sessionId) {
         // if there is already such participant in lobby
         // remove the existing and add a new one
         removeFromLobby(...participant);
+        // do not notify session state as nothing is changed except the connection (ws)
     }
 
     lobby.add(ws, participantId, sessionId);
@@ -53,6 +77,7 @@ function addToLobby(ws, participantId, sessionId) {
         // a new connection with this info may already be added
         // need to search by ws only
         removeFromLobby(ws);
+        phoenix.send(createMessage('state-service', { name: 'session.leave', participantId, sessionId }));
     });
 }
 
@@ -68,6 +93,7 @@ function addToHall(ws, participantId, sessionId, role) {
         // if there is already such participant in the hall
         // remove the existing and add a new one
         removeFromHall(...participant);
+        // do not notify session state as nothing is changed except the connection (ws)
     }
 
     hall.add(ws, participantId, sessionId, role);
@@ -76,8 +102,11 @@ function addToHall(ws, participantId, sessionId, role) {
         // a new connection with this info may already be added
         // need to search by ws only
         removeFromHall(ws);
+        phoenix.send(createMessage('state-service', { name: 'session.leave', participantId, sessionId }));
     });
 }
+
+// -------------- Messages handlers --------------
 
 function participantIdentified(participantId, sessionId, role) {
     const participant = lobby.get(null, participantId, sessionId);
@@ -90,16 +119,15 @@ function participantIdentified(participantId, sessionId, role) {
     clearConnection(participant[0]);
     addToHall(...participant, role);
 
-    hall.getMasters(sessionId).forEach(([ws]) => {
-        ws.send(createMessage('_qd-ui', { name: 'new-user', participantId, /* displayName */ }));
-    });
+    const newUserAnnouncementMessage = createMessage('_qd-ui', { name: 'participant.joined', participantId, /* displayName */ });
+    sendToGameMasters(sessionId, newUserAnnouncementMessage);
 }
 
 function processNewConnection(ws) {
     return verifyAuth(ws)
         .then(([participantId, sessionId]) => {
             addToLobby(ws, participantId, sessionId);
-            phoenix.send(createMessage('state-service', { name: 'user-connected', participantId, sessionId }));
+            phoenix.send(createMessage('state-service', { name: 'session.join', participantId, sessionId }));
         })
         .catch((error) => {
             console.error('[front-service]', '[ws-server]', 'New connection rejected', error);
@@ -110,7 +138,7 @@ function processNewConnection(ws) {
 
 function processServerMessage(message) {
     switch (message.name) {
-        case 'user-connected':
+        case 'participant.joined':
             return participantIdentified(message.participantId, message.sessionId, message.role);
         default:
             return console.warn('[front-service]', '[ws-server]', 'Unknown message from server');
