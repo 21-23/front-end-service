@@ -7,19 +7,14 @@
     "start": "cross-env NODE_PATH=./ node index.js",
     "debug": "cross-env NODE_PATH=./ node --inspect --debug-brk index.js",
     "watch": "cross-env NODE_PATH=./ nodemon index.js",
-    "dev": "cross-env NODE_PATH=./ nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "cross-env NODE_PATH=./ nodemon index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Shastel/_qdOauth.git"
+    "url": "git@github.com:21-23/front-end-service.git"
   },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Shastel/_qdOauth/issues"
-  },
-  "homepage": "https://github.com/Shastel/_qdOauth#readme",
+  "author": "21-23",
+  "license": "LGPL-3.0",
   "dependencies": {
     "body-parser": "^1.16.0",
     "cookie-parser": "^1.4.3",
