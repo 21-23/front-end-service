@@ -3,7 +3,7 @@
 const WebSocketClient = require('uws');
 
 const createPhoenix = require('phoenix');
-const { createMessage, parseMessage, arnaux } = require('message-factory');
+const { parseMessage, arnaux, protocol: { frontService, stateService, ui } } = require('message-factory');
 
 const config = require('../../config');
 
@@ -12,6 +12,8 @@ const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), 
 
 const createLobby = require('./lobby');
 const createHall = require('./hall');
+
+const MESSAGE_NAME = frontService.MESSAGE_NAME;
 
 const lobby = createLobby();
 const hall = createHall();
@@ -31,7 +33,7 @@ function clearConnection(ws) {
 
 function rejectConnection(ws) {
     clearConnection(ws);
-    // prvent client phoenix from reconnect
+    // prevent client phoenix from reconnect
     ws.close(4500);
 }
 
@@ -77,7 +79,7 @@ function addToLobby(ws, participantId, sessionId) {
         // a new connection with this info may already be added
         // need to search by ws only
         removeFromLobby(ws);
-        phoenix.send(createMessage('state-service', { name: 'session.leave', participantId, sessionId }));
+        phoenix.send(stateService.sessionLeave(sessionId, participantId));
     });
 }
 
@@ -102,7 +104,8 @@ function addToHall(ws, participantId, sessionId, role) {
         // a new connection with this info may already be added
         // need to search by ws only
         removeFromHall(ws);
-        phoenix.send(createMessage('state-service', { name: 'session.leave', participantId, sessionId }));
+        phoenix.send(stateService.sessionLeave(sessionId, participantId));
+        sendToGameMasters(sessionId, ui.participantLeft(sessionId, participantId));
     });
 }
 
@@ -119,15 +122,14 @@ function participantIdentified(participantId, sessionId, role) {
     clearConnection(participant[0]);
     addToHall(...participant, role);
 
-    const newUserAnnouncementMessage = createMessage('_qd-ui', { name: 'participant.joined', participantId, /* displayName */ });
-    sendToGameMasters(sessionId, newUserAnnouncementMessage);
+    sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, 'Unknown participant'/* displayName */));
 }
 
 function processNewConnection(ws) {
     return verifyAuth(ws)
         .then(([participantId, sessionId]) => {
             addToLobby(ws, participantId, sessionId);
-            phoenix.send(createMessage('state-service', { name: 'session.join', participantId, sessionId }));
+            phoenix.send(stateService.sessionJoin(sessionId, participantId));
         })
         .catch((error) => {
             console.error('[front-service]', '[ws-server]', 'New connection rejected', error);
@@ -138,10 +140,10 @@ function processNewConnection(ws) {
 
 function processServerMessage(message) {
     switch (message.name) {
-        case 'participant.joined':
+        case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
         default:
-            return console.warn('[front-service]', '[ws-server]', 'Unknown message from server');
+            return console.warn('[front-service]', '[ws-server]', 'Unknown message from server', message.name);
     }
 }
 
