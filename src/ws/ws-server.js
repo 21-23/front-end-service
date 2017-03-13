@@ -1,6 +1,7 @@
 // TODO: use action creators for messages
 
 const WebSocketClient = require('uws');
+const { parse } = require('cookie');
 
 const createPhoenix = require('phoenix');
 const { parseMessage, arnaux, protocol: { frontService, stateService, ui } } = require('message-factory');
@@ -21,7 +22,20 @@ const hall = createHall();
 function verifyAuth(ws) {
     // TODO: verify(ws.upgradeReq)
     // ensure both params: participantId and sessionId
-    return Promise.resolve(['part-icip-antI-d', 'session-id']);
+    const { upgradeReq: { headers: { cookie } } } = ws;
+    const { secret: uid } = parse(cookie);
+
+    if (!uid) {
+        const errorMessage = 'Participant without uid';
+        console.warn('[front-service]', '[ws-server]', errorMessage);
+
+        // TODO: Uncomment asap
+        // ws.close(401, errorMessage);
+        // return;
+    }
+    const partId = uid || 'part-icip-antI-d';
+
+    return Promise.resolve([partId, 'session-id']);
 }
 
 // -------------- Connection management --------------
