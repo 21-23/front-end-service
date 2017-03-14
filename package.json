@@ -31,7 +31,10 @@
     "morgan": "^1.7.0",
     "nconf": "^0.8.4",
     "passport": "^0.3.2",
+    "passport-facebook": "^2.1.1",
     "passport-github": "^1.1.0",
+    "passport-google-oauth2": "^0.1.6",
+    "passport-twitter": "^1.0.4",
     "phoenix": "games4nerds/phoenix",
     "uws": "^0.12.0"
   },

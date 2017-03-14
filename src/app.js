@@ -1,8 +1,7 @@
 const express = require('express');
 const path = require('path');
 const passport = require('passport');
-const gitHubStrategy = require('./stategies/github-strategy');
-const setUidCookieMiddleware = require('./utils/setCookieMiddleware')();
+const auth = require('./auth');
 const config = require('../config');
 
 const app = express();
@@ -24,23 +23,12 @@ passport.deserializeUser((user, done) => {
     done(null, user);
 });
 
-passport.use(gitHubStrategy);
+auth.strategies.forEach(strategy => passport.use(strategy));
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get('/auth/github', passport.authenticate('github'));
-
-app.get('/cb',
-    passport.authenticate('github',
-    { failureRedirect: '/login.html' }),
-    setUidCookieMiddleware,
-    (req, res) => {
-        const returnUrl = req.cookies['returnUrl'];
-
-        res.redirect(returnUrl || '/');
-    }
-);
+app.use('/auth', auth.router);
 
 app.get('/game.html', (req, res, next) => {
     if (!req.query.sessionId) {
