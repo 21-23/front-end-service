@@ -46,11 +46,13 @@ app.get('/game.html', (req, res, next) => {
     if (!req.query.sessionId) {
         return res.redirect('/');
     }
+    res.cookie('sessionId', req.query.sessionId, { httpOnly: true });
+
     if (req.isAuthenticated()) {
         return next();
     }
 
-    res.cookie('returnUrl', req.originalUrl);
+    res.cookie('returnUrl', req.originalUrl, { httpOnly: true });
     res.redirect('/login.html');
 });
 
@@ -58,11 +60,13 @@ app.get('/game-master.html', (req, res, next) => {
     if (!req.query.sessionId) {
         return res.redirect('/');
     }
+    res.cookie('sessionId', req.query.sessionId, { httpOnly: true });
+
     if (req.isAuthenticated()) {
         return next();
     }
 
-    res.cookie('returnUrl', req.originalUrl);
+    res.cookie('returnUrl', req.originalUrl, { httpOnly: true });
     res.redirect('/login.html');
 });
 
