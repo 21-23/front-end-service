@@ -12,7 +12,6 @@ module.exports = new GitHubStrategy({
       const formattedUser = formatUser(profile);
       findOrCreate(formattedUser)
             .then((user) => {
-                console.log(user);
                 cb(null, user);
             });
   }
