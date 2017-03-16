@@ -4,7 +4,7 @@ const { randomBytes } = require('crypto');
 const { Schema } = mongoose;
 
 const User = new Schema({
-    nickName: {
+    username: {
         type: String,
         default: '',
     },
@@ -18,7 +18,6 @@ const User = new Schema({
     },
     provider: {
         type: String,
-        enum: ['github'],
     },
     providerId: {
         type: String,
@@ -31,23 +30,16 @@ const User = new Schema({
 });
 
 User.statics.findOrCreate = function (profile) {
-    const user = new this(profile);
-
-    return new Promise((resolve, reject) => {
-        this.findOne(profile, (err, result) => {
-            if (err) {
-                console.log('save err');
-                reject(err);
-                return;
-            }
-
-            if (!result) {
+    return this.findOne(profile)
+        .exec()
+        .then((result) => {
+            if (result === null) {
                 console.log('save new user');
-                return user.save();
+                return new this(profile).save();
             }
-            resolve(result);
+
+            return result;
         });
-    });
 };
 
 module.exports = mongoose.model('user', User);

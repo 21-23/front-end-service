@@ -1,4 +1,4 @@
-const defaultOptions = {};
+const defaultOptions = { httpOnly: true };
 
 module.exports = function createMiddleware(options) {
 
