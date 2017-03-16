@@ -69,6 +69,26 @@ function sendToSession(sessionId, message) {
     sendToPlayers(sessionId, message);
 }
 
+// -------------- Client messages --------------
+
+function handleClientMessage(ws, message) {
+    const participant = hall.get(ws);
+
+    if (!participant) {
+        // unknown client
+        return;
+    }
+
+    const [, participantId, sessionId] = participant;
+
+    switch (message.name) {
+        case MESSAGE_NAME.solution:
+            return phoenix.send(stateService.participantInput(sessionId, participantId, message.input, Date.now()));
+        default:
+            return console.warn('[front-service]', '[ws-server]', 'Unknown message from client', message.name);
+    }
+}
+
 // -------------- Sessions state management --------------
 
 function removeFromLobby(ws, participantId, sessionId) {
@@ -119,6 +139,11 @@ function addToHall(ws, participantId, sessionId, role) {
         removeFromHall(ws);
         phoenix.send(stateService.sessionLeave(sessionId, participantId));
         sendToGameMasters(sessionId, ui.participantLeft(sessionId, participantId));
+    });
+    ws.on('message', function onClientMessage(incomingMessage) {
+        const { message } = parseMessage(incomingMessage);
+
+        handleClientMessage(this, message);
     });
 }
 
