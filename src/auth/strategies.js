@@ -2,6 +2,7 @@ const GitHubStrategy = require('passport-github').Strategy;
 const TwitterStrategy = require('passport-twitter').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
+const { log, error } = require('steno');
 
 const config = require('../../config.secret');
 const { findOrCreate } = require('../services/user-service');
@@ -40,15 +41,18 @@ strategies.providers = strategies.map(strategy => strategy.name);
 
 module.exports = strategies;
 
-
 function verifyUser(provider, accessToken, refreshToken, oauthProfile, done) {
     const formattedUser = formatUser(oauthProfile, provider);
 
     findOrCreate(formattedUser)
-          .then((user) => {
-              console.log(user);
-              done(null, user);
-          });
+        .then((user) => {
+            log(user);
+            done(null, user);
+        })
+        .catch((err) => {
+            error('Can not find or create user', err);
+            done(err);
+        });
 }
 
 function formatUser(profile, provider) {

@@ -1,8 +1,13 @@
 const http = require('http');
+
+const mongoose = require('mongoose');
+const { initSteno, log } = require('steno');
+
 const app = require('./src/app');
 const config = require('./config');
 const initWSServer = require('./src/ws/ws-server');
-const mongoose = require('mongoose');
+
+initSteno('front-service', 'all');
 
 const port = config.get('PORT');
 app.set('port', port);
@@ -10,7 +15,7 @@ app.set('port', port);
 const server = http.createServer(app);
 
 server.listen(port, () => {
-    console.log('Server is ready on', port);
+    log('Server is ready on', port);
 
     initWSServer({ port: config.get('WS_PORT') });
     mongoose.Promise = global.Promise;
