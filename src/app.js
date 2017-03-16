@@ -1,12 +1,14 @@
 const express = require('express');
 const path = require('path');
 const passport = require('passport');
+const cookieParser = require('cookie-parser')();
+
 const auth = require('./auth');
 const config = require('../config');
 
 const app = express();
 
-app.use(require('cookie-parser')());
+app.use(cookieParser);
 app.use(require('express-session')({
     secret: config.get('session-secret'),
     saveUninitialized: true,
@@ -80,3 +82,4 @@ app.use(function(err, req, res, next) { //eslint-disable-line
 });
 
 module.exports = app;
+module.exports.cookieParser = cookieParser;
