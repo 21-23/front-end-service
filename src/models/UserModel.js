@@ -4,17 +4,9 @@ const { randomBytes } = require('crypto');
 const { Schema } = mongoose;
 
 const User = new Schema({
-    username: {
-        type: String,
-        default: '',
-    },
     displayName: {
         type: String,
         default: '',
-    },
-    isMaster: {
-        type: Boolean,
-        default: false,
     },
     provider: {
         type: String,
