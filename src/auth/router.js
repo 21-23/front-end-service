@@ -32,6 +32,7 @@ function logOut(req, res) {
     req.logout();
 
     res.clearCookie('secret');
+    res.clearCookie('sessionId');
     res.redirect('/');
 }
 

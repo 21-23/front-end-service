@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { randomBytes } = require('crypto');
 
+const { log } = require('steno');
+
 const { Schema } = mongoose;
 
 const User = new Schema({
@@ -34,7 +36,7 @@ User.statics.findOrCreate = function (profile) {
         .exec()
         .then((result) => {
             if (result === null) {
-                console.log('save new user');
+                log('save new user');
                 return new this(profile).save();
             }
 

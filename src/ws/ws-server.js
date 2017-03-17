@@ -1,9 +1,8 @@
-// TODO: use action creators for messages
-
 const WebSocketClient = require('uws');
 
 const createPhoenix = require('phoenix');
 const { parseMessage, arnaux, protocol: { frontService, stateService, ui } } = require('message-factory');
+const { error, warn, log } = require('steno');
 
 const config = require('../../config');
 
@@ -18,10 +17,24 @@ const MESSAGE_NAME = frontService.MESSAGE_NAME;
 const lobby = createLobby();
 const hall = createHall();
 
+let parseCookie = null;
+
 function verifyAuth(ws) {
-    // TODO: verify(ws.upgradeReq)
-    // ensure both params: participantId and sessionId
-    return Promise.resolve(['part-icip-antI-d', 'session-id']);
+    const req = ws.upgradeReq;
+
+    return new Promise((resolve, reject) => {
+        parseCookie(req, null, () => {
+            const uid = req.cookies['secret'];
+            const sessionId = req.cookies['sessionId'];
+
+            if (uid && sessionId) {
+                // TODO: get user profile by uid
+                resolve([uid, sessionId]);
+            } else {
+                reject();
+            }
+        });
+    });
 }
 
 // -------------- Connection management --------------
@@ -115,7 +128,7 @@ function participantIdentified(participantId, sessionId, role) {
     const participant = lobby.get(null, participantId, sessionId);
 
     if (!participant) {
-        return console.warn('[front-service]', '[ws-server]', 'Unknown participant identification', participantId);
+        return warn('[ws-server]', 'Unknown participant identification', participantId);
     }
 
     lobby.remove(...participant);
@@ -132,7 +145,7 @@ function processNewConnection(ws) {
             phoenix.send(stateService.sessionJoin(sessionId, participantId));
         })
         .catch((error) => {
-            console.error('[front-service]', '[ws-server]', 'New connection rejected', error);
+            error('[ws-server]', 'New connection rejected', error);
 
             rejectConnection(ws);
         });
@@ -143,25 +156,27 @@ function processServerMessage(message) {
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
         default:
-            return console.warn('[front-service]', '[ws-server]', 'Unknown message from server', message.name);
+            return warn('[ws-server]', 'Unknown message from server', message.name);
     }
 }
 
-function createWsServer({ port }) {
+function createWsServer({ port, cookieParser }) {
     const wss = new Server({ port }, () => {
-        console.log('[front-service]', '[ws-server]', 'Server is ready on', port);
+        log('[ws-server]', 'Server is ready on', port);
 
         wss.on('connection', processNewConnection);
     });
+
+    parseCookie = cookieParser;
 }
 
 phoenix
     .on('connected', () => {
-        console.log('[front-service]', '[ws-server]', 'phoenix is alive');
+        log('[ws-server]', 'phoenix is alive');
         phoenix.send(arnaux.checkin(config.get('ARNAUX_IDENTITY')));
     })
     .on('disconnected', () => {
-        console.error('[front-service]', '[ws-server]', 'phoenix disconnected');
+        error('[ws-server]', 'phoenix disconnected');
     })
     .on('message', (incomingMessage) => {
         const { message } = parseMessage(incomingMessage.data);

@@ -1,3 +1,5 @@
+const { log } = require('steno');
+
 const User = require('../models/UserModel');
 const cache = require('./cache-service.js');
 
@@ -23,7 +25,7 @@ module.exports = {
 
     findOrCreate(opts) {
         return User.findOrCreate(opts).then((user) => {
-            console.log('save uncached user');
+            log('save uncached user');
             if (!cache.get(user.uid)) {
                 cache.set(user.uid, user);
             }
