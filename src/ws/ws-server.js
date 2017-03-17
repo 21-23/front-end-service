@@ -176,7 +176,7 @@ function solutionEvaluated(message) {
     }
 
     sendToPlayer(participant[0], ui.solutionEvaluated(message.result, message.error, message.correct, message.time));
-    // TODO: send to GM
+    sendToGameMasters(sessionId, ui.participantSolution(participantId, message.correct, message.time, message.length));
 }
 
 function processNewConnection(ws) {
@@ -193,6 +193,7 @@ function processNewConnection(ws) {
 }
 
 function processServerMessage(message) {
+    // TODO: move participant validation here
     switch (message.name) {
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
