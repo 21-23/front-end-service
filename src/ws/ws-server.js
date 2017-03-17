@@ -69,13 +69,17 @@ function sendToSession(sessionId, message) {
     sendToPlayers(sessionId, message);
 }
 
+function sendToPlayer(ws, message) {
+    ws.send(message);
+}
+
 // -------------- Client messages --------------
 
 function handleClientMessage(ws, message) {
     const participant = hall.get(ws);
 
     if (!participant) {
-        // unknown client
+        warn('[ws-server]', 'Message from unknown client', message);
         return;
     }
 
@@ -85,7 +89,7 @@ function handleClientMessage(ws, message) {
         case MESSAGE_NAME.solution:
             return phoenix.send(stateService.participantInput(sessionId, participantId, message.input, Date.now()));
         default:
-            return console.warn('[front-service]', '[ws-server]', 'Unknown message from client', message.name);
+            return warn('[ws-server]', 'Unknown message from client', message.name);
     }
 }
 
@@ -163,6 +167,18 @@ function participantIdentified(participantId, sessionId, role) {
     sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, 'Unknown participant'/* displayName */));
 }
 
+function solutionEvaluated(message) {
+    const { participantId, sessionId } = message;
+    const participant = hall.get(null, participantId, sessionId);
+
+    if (!participant) {
+        return warn('[ws-server]', 'Unknown participant solution evaluation', message);
+    }
+
+    sendToPlayer(participant[0], ui.solutionEvaluated(message.result, message.error, message.correct, message.time));
+    // TODO: send to GM
+}
+
 function processNewConnection(ws) {
     return verifyAuth(ws)
         .then(([participantId, sessionId]) => {
@@ -180,6 +196,8 @@ function processServerMessage(message) {
     switch (message.name) {
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
+        case MESSAGE_NAME.solutionEvaluated:
+            return solutionEvaluated(message);
         default:
             return warn('[ws-server]', 'Unknown message from server', message.name);
     }
