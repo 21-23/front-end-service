@@ -58,8 +58,7 @@ function verifyUser(provider, accessToken, refreshToken, oauthProfile, done) {
 function formatUser(profile, provider) {
     return {
         providerId: profile.id,
-        displayName: profile.displayName,
-        nickName: profile.username,
+        displayName: profile.displayName || profile.username,
         provider,
     };
 }
