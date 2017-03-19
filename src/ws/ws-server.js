@@ -69,6 +69,30 @@ function sendToSession(sessionId, message) {
     sendToPlayers(sessionId, message);
 }
 
+function sendToPlayer(ws, message) {
+    ws.send(message);
+}
+
+// -------------- Client messages --------------
+
+function handleClientMessage(ws, message) {
+    const participant = hall.get(ws);
+
+    if (!participant) {
+        warn('[ws-server]', 'Message from unknown client', message);
+        return;
+    }
+
+    const [, participantId, sessionId] = participant;
+
+    switch (message.name) {
+        case MESSAGE_NAME.solution:
+            return phoenix.send(stateService.participantInput(sessionId, participantId, message.input, Date.now()));
+        default:
+            return warn('[ws-server]', 'Unknown message from client', message.name);
+    }
+}
+
 // -------------- Sessions state management --------------
 
 function removeFromLobby(ws, participantId, sessionId) {
@@ -120,6 +144,11 @@ function addToHall(ws, participantId, sessionId, role) {
         phoenix.send(stateService.sessionLeave(sessionId, participantId));
         sendToGameMasters(sessionId, ui.participantLeft(sessionId, participantId));
     });
+    ws.on('message', function onClientMessage(incomingMessage) {
+        const { message } = parseMessage(incomingMessage);
+
+        handleClientMessage(this, message);
+    });
 }
 
 // -------------- Messages handlers --------------
@@ -138,6 +167,18 @@ function participantIdentified(participantId, sessionId, role) {
     sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, 'Unknown participant'/* displayName */));
 }
 
+function solutionEvaluated(message) {
+    const { participantId, sessionId } = message;
+    const participant = hall.get(null, participantId, sessionId);
+
+    if (!participant) {
+        return warn('[ws-server]', 'Unknown participant solution evaluation', message);
+    }
+
+    sendToPlayer(participant[0], ui.solutionEvaluated(message.result, message.error, message.correct, message.time));
+    sendToGameMasters(sessionId, ui.participantSolution(participantId, message.correct, message.time, message.length));
+}
+
 function processNewConnection(ws) {
     return verifyAuth(ws)
         .then(([participantId, sessionId]) => {
@@ -152,9 +193,12 @@ function processNewConnection(ws) {
 }
 
 function processServerMessage(message) {
+    // TODO: move participant validation here
     switch (message.name) {
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
+        case MESSAGE_NAME.solutionEvaluated:
+            return solutionEvaluated(message);
         default:
             return warn('[ws-server]', 'Unknown message from server', message.name);
     }
