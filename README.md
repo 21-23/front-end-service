@@ -7,5 +7,6 @@ To run:
 4. `yarn run build`
 5. `cd ../front-end-service`
 6. `cp -r ../_qd-ui/dist/* ./static/`
-7. `yarn run start`
-8. open in browser [http://2123.dev:3000/game.html?sessionId=qd-session](http://2123.dev:3000/game.html?sessionId=qd-session) [http://2123.dev:3000/game-master.html?sessionId=qd-session](http://2123.dev:3000/game-master.html?sessionId=qd-session)
+7. `cp ../_qd-secret/front-service/config.secret.json ./`
+8. `yarn run start`
+9. open in browser [http://2123.dev:3000/game.html?sessionId=qd-session](http://2123.dev:3000/game.html?sessionId=qd-session) [http://2123.dev:3000/game-master.html?sessionId=qd-session](http://2123.dev:3000/game-master.html?sessionId=qd-session)
