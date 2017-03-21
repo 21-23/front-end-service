@@ -16,6 +16,10 @@ function getByUid(uid) {
         return Promise.resolve(cachedUser);
     }
 
+    // TODO: add step-by-step data retrieval:
+    //   1. all possible info from cache
+    //   2. rest from DB in one query
+    
     return User.findOne({ uid }).exec().then((user) => {
         if (user) {
             cache.set(user.uid, user);
