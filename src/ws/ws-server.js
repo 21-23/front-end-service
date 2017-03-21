@@ -18,6 +18,7 @@ const lobby = createLobby();
 const hall = createHall();
 
 let parseCookie = null;
+let loadProfile = null;
 
 function verifyAuth(ws) {
     const req = ws.upgradeReq;
@@ -28,7 +29,6 @@ function verifyAuth(ws) {
             const sessionId = req.cookies['sessionId'];
 
             if (uid && sessionId) {
-                // TODO: get user profile by uid
                 resolve([uid, sessionId]);
             } else {
                 reject();
@@ -151,6 +151,22 @@ function addToHall(ws, participantId, sessionId, role) {
     });
 }
 
+function getProfile(participantId) {
+    return loadProfile(participantId).then((profile) => {
+        if (profile) {
+            return profile;
+        }
+
+        warn('[ws-server]', 'Can not load profile for', participantId);
+
+        return null;
+    }).catch((error) => {
+        warn('[ws-server]', 'Error in profile loading', error);
+
+        return null;
+    });
+}
+
 // -------------- Messages handlers --------------
 
 function participantIdentified(participantId, sessionId, role) {
@@ -164,7 +180,13 @@ function participantIdentified(participantId, sessionId, role) {
     clearConnection(participant[0]);
     addToHall(...participant, role);
 
-    sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, 'Unknown participant'/* displayName */));
+    getProfile(participantId).then((profile) => {
+        if (!profile) {
+            warn('Can not get profile for participant', participantId, 'session', sessionId);
+        }
+
+        sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, (profile && profile.displayName) || ''));
+    });
 }
 
 function solutionEvaluated(message) {
@@ -204,7 +226,7 @@ function processServerMessage(message) {
     }
 }
 
-function createWsServer({ port, cookieParser }) {
+function createWsServer({ port, cookieParser, profileLoader }) {
     const wss = new Server({ port }, () => {
         log('[ws-server]', 'Server is ready on', port);
 
@@ -212,6 +234,7 @@ function createWsServer({ port, cookieParser }) {
     });
 
     parseCookie = cookieParser;
+    loadProfile = profileLoader;
 }
 
 phoenix

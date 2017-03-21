@@ -1446,6 +1446,10 @@ lru-cache@^4.0.1:
     pseudomap "^1.0.1"
     yallist "^2.0.0"
 
+lru-native@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/lru-native/-/lru-native-0.4.0.tgz#bc13c32dfbd1719c02f1a0392a54e7e5c6114654"
+
 map-stream@~0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/map-stream/-/map-stream-0.1.0.tgz#e56aa94c4c8055a16404a0674b78f215f7c8e194"

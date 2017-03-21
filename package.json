@@ -21,6 +21,7 @@
     "cross-env": "^3.1.4",
     "express": "^4.14.0",
     "express-session": "^1.15.0",
+    "lru-native": "^0.4.0",
     "message-factory": "21-23/message-factory#v2.3.0",
     "mongoose": "^4.8.1",
     "morgan": "^1.7.0",

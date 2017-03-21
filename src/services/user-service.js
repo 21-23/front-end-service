@@ -1,7 +1,13 @@
+const LRUCache = require('lru-native');
 const { log } = require('steno');
 
 const User = require('../models/UserModel');
-const cache = require('./cache-service.js');
+
+const cache = new LRUCache({
+    maxElements: 1000,
+    maxAge: 120 * 60 * 1000, // 2 hours
+    size: 100
+});
 
 module.exports = {
     get(uid) {
@@ -15,25 +21,23 @@ module.exports = {
             if (user) {
                 cache.set(user.uid, user);
             }
+
+            return user;
         });
     },
 
     create(opts) {
         const user = new User(opts);
+
         return user.save();
     },
 
     findOrCreate(opts) {
         return User.findOrCreate(opts).then((user) => {
             log('save uncached user');
-            if (!cache.get(user.uid)) {
-                cache.set(user.uid, user);
-            }
+            cache.set(user.uid, user);
+
             return user;
         });
-    },
-
-    isMaster(user) {
-        return user.isMaster;
     }
 };
