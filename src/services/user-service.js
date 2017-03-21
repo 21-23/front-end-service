@@ -9,21 +9,25 @@ const cache = new LRUCache({
     size: 100
 });
 
-module.exports = {
-    get(uid) {
-        const cachedUser = cache.get(uid);
+function getByUid(uid) {
+    const cachedUser = cache.get(uid);
 
-        if (cachedUser) {
-            return Promise.resolve(cachedUser);
+    if (cachedUser) {
+        return Promise.resolve(cachedUser);
+    }
+
+    return User.findOne({ uid }).exec().then((user) => {
+        if (user) {
+            cache.set(user.uid, user);
         }
 
-        return User.findOne({ uid }).exec().then((user) => {
-            if (user) {
-                cache.set(user.uid, user);
-            }
+        return user;
+    }); // TODO: add catch?
+}
 
-            return user;
-        });
+module.exports = {
+    get(uids) {
+        return Promise.all(uids.map(getByUid));
     },
 
     create(opts) {

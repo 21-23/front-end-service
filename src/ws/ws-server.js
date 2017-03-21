@@ -13,12 +13,15 @@ const createLobby = require('./lobby');
 const createHall = require('./hall');
 
 const MESSAGE_NAME = frontService.MESSAGE_NAME;
+const DEFAULT_PROFILE = {
+    displayName: 'Unknown'
+};
 
 const lobby = createLobby();
 const hall = createHall();
 
 let parseCookie = null;
-let loadProfile = null;
+let loadProfiles = null;
 
 function verifyAuth(ws) {
     const req = ws.upgradeReq;
@@ -151,19 +154,19 @@ function addToHall(ws, participantId, sessionId, role) {
     });
 }
 
-function getProfile(participantId) {
-    return loadProfile(participantId).then((profile) => {
-        if (profile) {
-            return profile;
+function getProfiles(participantIds) {
+    return loadProfiles(participantIds).then((profiles) => {
+        if (!profiles || !Array.isArray(profiles)) {
+            throw new Error('loadProfiles returned nothing');
         }
 
-        warn('[ws-server]', 'Can not load profile for', participantId);
-
-        return null;
+        return profiles.map((profile) => {
+            return profile || DEFAULT_PROFILE;
+        });
     }).catch((error) => {
         warn('[ws-server]', 'Error in profile loading', error);
 
-        return null;
+        return Array(participantIds.length).fill(DEFAULT_PROFILE);
     });
 }
 
@@ -180,12 +183,12 @@ function participantIdentified(participantId, sessionId, role) {
     clearConnection(participant[0]);
     addToHall(...participant, role);
 
-    getProfile(participantId).then((profile) => {
+    getProfiles([participantId]).then(([profile]) => {
         if (!profile) {
             warn('Can not get profile for participant', participantId, 'session', sessionId);
         }
 
-        sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, (profile && profile.displayName) || ''));
+        sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, profile.displayName));
     });
 }
 
@@ -234,7 +237,7 @@ function createWsServer({ port, cookieParser, profileLoader }) {
     });
 
     parseCookie = cookieParser;
-    loadProfile = profileLoader;
+    loadProfiles = profileLoader;
 }
 
 phoenix
