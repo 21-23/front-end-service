@@ -77,7 +77,7 @@ app.use(function(err, req, res, next) { //eslint-disable-line
     res.json({
         code: err.status || 500,
         message: err.message,
-        error: err
+        error: err,
     });
 });
 

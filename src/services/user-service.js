@@ -35,5 +35,5 @@ module.exports = {
 
     isMaster(user) {
         return user.isMaster;
-    }
+    },
 };

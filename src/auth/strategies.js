@@ -34,7 +34,7 @@ const strategies = [
 ];
 
 strategies.scopes = {
-    google: ['https://www.googleapis.com/auth/plus.login']
+    google: ['https://www.googleapis.com/auth/plus.login'],
 };
 
 strategies.providers = strategies.map(strategy => strategy.name);
