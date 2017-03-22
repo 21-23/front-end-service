@@ -13,6 +13,11 @@ config.defaults({
     ARNAUX_URL: 'ws://localhost:8888/',
     ARNAUX_IDENTITY: 'front-service',
     'session-secret': 'keyboard cat',
+    userCacheOptions: {
+        maxElements: 1000,
+        maxAge: 120 * 60 * 1000, // 2 hours
+        size: 100,
+    },
 });
 
 module.exports = config;
