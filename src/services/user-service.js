@@ -1,13 +1,10 @@
 const LRUCache = require('lru-native');
 const { log } = require('steno');
 
+const config = require('../../config');
 const User = require('../models/UserModel');
-
-const cache = new LRUCache({
-    maxElements: 1000,
-    maxAge: 120 * 60 * 1000, // 2 hours
-    size: 100
-});
+debugger;
+const cache = new LRUCache(config.get('userCacheOptions'));
 
 function getByUid(uid) {
     const cachedUser = cache.get(uid);
@@ -19,7 +16,7 @@ function getByUid(uid) {
     // TODO: add step-by-step data retrieval:
     //   1. all possible info from cache
     //   2. rest from DB in one query
-    
+
     return User.findOne({ uid }).exec().then((user) => {
         if (user) {
             cache.set(user.uid, user);
