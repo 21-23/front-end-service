@@ -1,5 +1,5 @@
 const LRUCache = require('lru-native');
-const { log } = require('steno');
+const { log, error } = require('steno');
 
 const config = require('../../config');
 const User = require('../models/UserModel');
@@ -23,7 +23,11 @@ function getByUid(uid) {
         }
 
         return user;
-    }); // TODO: add catch?
+    }).catch((err) => {
+        error('Can not find profile', err);
+
+        return null;
+    });
 }
 
 module.exports = {
@@ -43,6 +47,10 @@ module.exports = {
             cache.set(user.uid, user);
 
             return user;
+        }).catch((err) => {
+            error('Can not find or create profile', err);
+
+            return null;
         });
     },
 };

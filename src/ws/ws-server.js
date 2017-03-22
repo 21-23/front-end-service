@@ -14,7 +14,7 @@ const createHall = require('./hall');
 
 const MESSAGE_NAME = frontService.MESSAGE_NAME;
 const DEFAULT_PROFILE = {
-    displayName: 'Unknown'
+    displayName: 'Unknown',
 };
 
 const lobby = createLobby();
