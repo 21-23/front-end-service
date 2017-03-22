@@ -9,6 +9,8 @@ const config = require('../../config');
 const Server = WebSocketClient.Server;
 const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
 
+const UserService = require('../services/user-service');
+
 const createLobby = require('./lobby');
 const createHall = require('./hall');
 
@@ -217,6 +219,16 @@ function processNewConnection(ws) {
         });
 }
 
+function createNewParticipant(message) {
+    return UserService.create(message.userData)
+              .then((user) => {
+                  log('[ws-server]', 'Create new user');
+
+                  const { uid } = user;
+                  phoenix.send(stateService.participantCreated(uid));
+              });
+}
+
 function processServerMessage(message) {
     // TODO: move participant validation here
     switch (message.name) {
@@ -224,6 +236,8 @@ function processServerMessage(message) {
             return participantIdentified(message.participantId, message.sessionId, message.role);
         case MESSAGE_NAME.solutionEvaluated:
             return solutionEvaluated(message);
+        case MESSAGE_NAME.createParticipant:
+            return createNewParticipant(message);
         default:
             return warn('[ws-server]', 'Unknown message from server', message.name);
     }
