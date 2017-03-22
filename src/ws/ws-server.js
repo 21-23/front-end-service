@@ -89,6 +89,12 @@ function handleClientMessage(ws, message) {
     const [, participantId, sessionId] = participant;
 
     switch (message.name) {
+        case MESSAGE_NAME.puzzleIndexSet:
+            return phoenix.send(stateService.puzzleIndexSet(sessionId, message.index));
+        case MESSAGE_NAME.roundStart:
+            return phoenix.roundPhaseSet(sessionId, 'countdown');
+        case MESSAGE_NAME.roundStop:
+            return phoenix.roundPhaseSet(sessionId, 'end');
         case MESSAGE_NAME.solution:
             return phoenix.send(stateService.participantInput(sessionId, participantId, message.input, Date.now()));
         default:
