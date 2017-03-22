@@ -3,7 +3,7 @@ const { log } = require('steno');
 
 const config = require('../../config');
 const User = require('../models/UserModel');
-debugger;
+
 const cache = new LRUCache(config.get('userCacheOptions'));
 
 function getByUid(uid) {
