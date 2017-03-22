@@ -34,7 +34,7 @@ function verifyAuth(ws) {
             if (uid && sessionId) {
                 resolve([uid, sessionId]);
             } else {
-                reject();
+                reject(`Invalid uid or sessionId: ${uid}, ${sessionId}`);
             }
         });
     });
@@ -210,8 +210,8 @@ function processNewConnection(ws) {
             addToLobby(ws, participantId, sessionId);
             phoenix.send(stateService.sessionJoin(sessionId, participantId));
         })
-        .catch((error) => {
-            error('[ws-server]', 'New connection rejected', error);
+        .catch((err) => {
+            error('[ws-server]', 'New connection rejected', err);
 
             rejectConnection(ws);
         });
