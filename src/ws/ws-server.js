@@ -198,6 +198,10 @@ function fillScoreWithProfiles(score, profiles, participantIds) {
 }
 
 function getProfiles(participantIds) {
+    if (!Array.isArray(participantIds) || !participantIds.length) {
+        return [];
+    }
+
     return loadProfiles(participantIds).then((profiles) => {
         if (!profiles || !Array.isArray(profiles)) {
             throw new Error('loadProfiles returned nothing');
@@ -257,8 +261,8 @@ function sessionState(message) {
     const participantIds = getScoreParticipantIds(message.score);
 
     return Promise.all([
-        // getProfiles([participantId]),
-        // getProfiles(participantIds),
+        getProfiles([participantId]),
+        getProfiles(participantIds),
     ]).then(([profile, scoreProfiles]) => {
         const score = fillScoreWithProfiles(message.score, scoreProfiles, participantIds);
 
