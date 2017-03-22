@@ -22,6 +22,7 @@ server.listen(port, () => {
 
     initWSServer({
         port: config.get('WS_PORT'),
-        cookieParser: app.cookieParser
+        cookieParser: app.cookieParser,
+        profileLoader: app.profileLoader,
     });
 });

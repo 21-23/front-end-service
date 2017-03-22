@@ -1,39 +1,56 @@
-const { log } = require('steno');
+const LRUCache = require('lru-native');
+const { log, error } = require('steno');
 
+const config = require('../../config');
 const User = require('../models/UserModel');
-const cache = require('./cache-service.js');
 
-module.exports = {
-    get(uid) {
-        const cachedUser = cache.get(uid);
+const cache = new LRUCache(config.get('userCacheOptions'));
 
-        if (cachedUser) {
-            return Promise.resolve(cachedUser);
+function getByUid(uid) {
+    const cachedUser = cache.get(uid);
+
+    if (cachedUser) {
+        return Promise.resolve(cachedUser);
+    }
+
+    // TODO: add step-by-step data retrieval:
+    //   1. all possible info from cache
+    //   2. rest from DB in one query
+
+    return User.findOne({ uid }).exec().then((user) => {
+        if (user) {
+            cache.set(user.uid, user);
         }
 
-        return User.findOne({ uid }).exec().then((user) => {
-            if (user) {
-                cache.set(user.uid, user);
-            }
-        });
+        return user;
+    }).catch((err) => {
+        error('Can not find profile', err);
+
+        return null;
+    });
+}
+
+module.exports = {
+    get(uids) {
+        return Promise.all(uids.map(getByUid));
     },
 
     create(opts) {
         const user = new User(opts);
+
         return user.save();
     },
 
     findOrCreate(opts) {
         return User.findOrCreate(opts).then((user) => {
             log('save uncached user');
-            if (!cache.get(user.uid)) {
-                cache.set(user.uid, user);
-            }
+            cache.set(user.uid, user);
+
             return user;
+        }).catch((err) => {
+            error('Can not find or create profile', err);
+
+            return null;
         });
     },
-
-    isMaster(user) {
-        return user.isMaster;
-    }
 };

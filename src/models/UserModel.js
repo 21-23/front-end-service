@@ -20,7 +20,7 @@ const User = new Schema({
     uid: {
         type: String,
         default: randomBytes(8).toString('hex'),
-    }
+    },
 });
 
 User.statics.findOrCreate = function (profile) {

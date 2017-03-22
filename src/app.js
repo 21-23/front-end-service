@@ -6,6 +6,8 @@ const cookieParser = require('cookie-parser')();
 const auth = require('./auth');
 const config = require('../config');
 
+const userService = require('./services/user-service');
+
 const app = express();
 
 app.use(cookieParser);
@@ -77,9 +79,10 @@ app.use(function(err, req, res, next) { //eslint-disable-line
     res.json({
         code: err.status || 500,
         message: err.message,
-        error: err
+        error: err,
     });
 });
 
 module.exports = app;
 module.exports.cookieParser = cookieParser;
+module.exports.profileLoader = userService.get;

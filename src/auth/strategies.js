@@ -34,7 +34,7 @@ const strategies = [
 ];
 
 strategies.scopes = {
-    google: ['https://www.googleapis.com/auth/plus.login']
+    google: ['https://www.googleapis.com/auth/plus.login'],
 };
 
 strategies.providers = strategies.map(strategy => strategy.name);
@@ -46,12 +46,12 @@ function verifyUser(provider, accessToken, refreshToken, oauthProfile, done) {
 
     findOrCreate(formattedUser)
         .then((user) => {
-            log(user);
+            if (!user) {
+                return done(new Error('Can not find or create user'));
+            }
+
+            log('Verified user', user);
             done(null, user);
-        })
-        .catch((err) => {
-            error('Can not find or create user', err);
-            done(err);
         });
 }
 
