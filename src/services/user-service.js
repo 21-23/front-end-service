@@ -6,33 +6,73 @@ const User = require('../models/UserModel');
 
 const cache = new LRUCache(config.get('userCacheOptions'));
 
-function getByUid(uid) {
-    const cachedUser = cache.get(uid);
-
-    if (cachedUser) {
-        return Promise.resolve(cachedUser);
-    }
-
-    // TODO: add step-by-step data retrieval:
-    //   1. all possible info from cache
-    //   2. rest from DB in one query
-
-    return User.findOne({ uid }).exec().then((user) => {
-        if (user) {
-            cache.set(user.uid, user);
+function fillFromCache(uids, profiles) {
+    profiles.forEach((profile, index) => {
+        if (profile) {
+            return;
         }
 
-        return user;
-    }).catch((err) => {
-        error('Can not find profile', err);
+        const uid = uids[index];
+        const cachedProfile = cache.get(uid);
 
-        return null;
+        if (!cachedProfile) {
+            return;
+        }
+
+        profiles[index] = cachedProfile;
     });
+}
+
+function fillFromDb(uids, profiles) {
+    const requiredUids = [];
+    const uidToIndexHash = new Map();
+
+    profiles.forEach((profile, index) => {
+        if (profile) {
+            return;
+        }
+
+        const uid = uids[index];
+
+        requiredUids.push(uid);
+        uidToIndexHash.set(uid, index);
+    });
+
+    if (!requiredUids.length) {
+        return Promise.resolve();
+    }
+
+    return User
+        .find()
+        .where('uid')
+        .in(requiredUids)
+        .exec()
+        .then((dbProfiles) => {
+            dbProfiles.forEach((dbProfile) => {
+                const dbUid = dbProfile.uid;
+                const index = uidToIndexHash.get(dbUid);
+
+                if (index < 0 || !dbProfile) {
+                    return;
+                }
+
+                profiles[index] = dbProfile;
+                cache.set(dbUid, dbProfile);
+            });
+        })
+        .catch((err) => {
+            error('Can not find multiple profiles in DB', err);
+        });
 }
 
 module.exports = {
     get(uids) {
-        return Promise.all(uids.map(getByUid));
+        const profiles = Array(uids.length).fill(null);
+
+        fillFromCache(uids, profiles);
+
+        return fillFromDb(uids, profiles)
+            .then(() => profiles);
     },
 
     create(opts) {
