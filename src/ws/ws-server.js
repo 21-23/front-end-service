@@ -266,7 +266,20 @@ function sessionState(message) {
     ]).then(([profile, scoreProfiles]) => {
         const score = fillScoreWithProfiles(message.score, scoreProfiles, participantIds);
 
-        sendToParticipant(participant[0], ui.sessionState(profile.displayName, message.puzzleIndex, message.puzzleCount, message.puzzle, message.roundPhase, message.roundCountdown, message.startCountdown, message.playerInput, score));
+        sendToParticipant(
+            participant[0],
+            ui.sessionState(
+                profile.displayName,
+                message.puzzleIndex,
+                message.puzzleCount,
+                message.puzzle,
+                message.roundPhase,
+                message.roundCountdown,
+                message.startCountdown,
+                message.playerInput,
+                score
+            )
+        );
     }).catch((err) => {
         warn('[ws-server]', 'Can not get profiles for session state', err);
     });
