@@ -9,7 +9,7 @@ const config = require('../../config');
 const Server = WebSocketClient.Server;
 const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
 
-const UserService = require('../services/user-service');
+// const UserService = require('../services/user-service');
 
 const createLobby = require('./lobby');
 const createHall = require('./hall');
@@ -24,6 +24,7 @@ const hall = createHall();
 
 let parseCookie = null;
 let loadProfiles = null;
+let UserService = null;
 
 function verifyAuth(ws) {
     const req = ws.upgradeReq;
@@ -225,10 +226,16 @@ function processNewConnection(ws) {
         });
 }
 
-function createNewParticipant(message) {
-    return UserService.create(message.userData)
+function createNewParticipant(userData) {
+    // validation?
+    return UserService.create(userData)
               .then((user) => {
                   log('[ws-server]', 'Create new user');
+
+                  if (!user) {
+                      // Send errors?
+                      return;
+                  }
 
                   const { uid } = user;
                   phoenix.send(stateService.participantCreated(uid));
@@ -243,13 +250,13 @@ function processServerMessage(message) {
         case MESSAGE_NAME.solutionEvaluated:
             return solutionEvaluated(message);
         case MESSAGE_NAME.createParticipant:
-            return createNewParticipant(message);
+            return createNewParticipant(message.userData);
         default:
             return warn('[ws-server]', 'Unknown message from server', message.name);
     }
 }
 
-function createWsServer({ port, cookieParser, profileLoader }) {
+function createWsServer({ port, cookieParser, profileLoader, userService }) {
     const wss = new Server({ port }, () => {
         log('[ws-server]', 'Server is ready on', port);
 
@@ -258,6 +265,7 @@ function createWsServer({ port, cookieParser, profileLoader }) {
 
     parseCookie = cookieParser;
     loadProfiles = profileLoader;
+    UserService = userService;
 }
 
 phoenix
