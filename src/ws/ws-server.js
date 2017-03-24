@@ -37,7 +37,7 @@ function verifyAuth(ws) {
             if (uid && sessionId) {
                 resolve([uid, sessionId]);
             } else {
-                reject();
+                reject(`Invalid uid or sessionId: ${uid}, ${sessionId}`);
             }
         });
     });
@@ -75,7 +75,7 @@ function sendToSession(sessionId, message) {
     sendToPlayers(sessionId, message);
 }
 
-function sendToPlayer(ws, message) {
+function sendToParticipant(ws, message) {
     ws.send(message);
 }
 
@@ -163,7 +163,54 @@ function addToHall(ws, participantId, sessionId, role) {
     });
 }
 
+function profilesToMap(profiles, participantIds) {
+    return profiles.reduce((result, profile, index) => {
+        return result.set(participantIds[index], profile);
+    }, new Map());
+}
+
+function getScoreParticipantIds(score) {
+    if (!score) {
+        // if no score - most probably we're preparing the session state for player
+        return [];
+    }
+
+    const { roundScore, aggregateScore } = score;
+    const participantIds = roundScore.map(playerRoundScore => playerRoundScore.participantId);
+
+    // just in case - check both scores
+    // most probably they contain the same set of participants
+    aggregateScore.forEach((playerAggregatescore) => {
+        if (!participantIds.includes(playerAggregatescore.participantId)) {
+            participantIds.push(playerAggregatescore.participantId);
+        }
+    });
+
+    return participantIds;
+}
+
+function fillScoreWithProfiles(score, profiles, participantIds) {
+    if (!score || !profiles.length) {
+        return score;
+    }
+
+    const profilesMap = profilesToMap(profiles, participantIds);
+
+    score.roundScore.forEach((participantScore) => {
+        participantScore.displayName = profilesMap.get(participantScore.participantId).displayName;
+    });
+    score.aggregateScore.forEach((participantScore) => {
+        participantScore.displayName = profilesMap.get(participantScore.participantId).displayName;
+    });
+
+    return score;
+}
+
 function getProfiles(participantIds) {
+    if (!Array.isArray(participantIds) || !participantIds.length) {
+        return [];
+    }
+
     return loadProfiles(participantIds).then((profiles) => {
         if (!profiles || !Array.isArray(profiles)) {
             throw new Error('loadProfiles returned nothing');
@@ -201,6 +248,52 @@ function participantIdentified(participantId, sessionId, role) {
     });
 }
 
+function puzzle(sessionId, input, expected) {
+    sendToSession(sessionId, ui.puzzle(input, expected));
+}
+
+function puzzleChanged(sessionId, puzzleIndex, puzzleName, timeLimit) {
+    sendToSession(sessionId, ui.puzzleChanged(puzzleIndex, puzzleName, timeLimit));
+}
+
+function roundCountdownChanged(sessionId, roundCountdown) {
+    sendToSession(sessionId, ui.roundCountdownChanged(roundCountdown));
+}
+
+function roundPhaseChanged(sessionId, roundPhase) {
+    sendToSession(sessionId, ui.roundCountdownChanged(roundPhase));
+}
+
+function sessionState(message) {
+    const { participantId, sessionId } = message;
+    const participant = hall.get(null, participantId, sessionId);
+    const participantIds = getScoreParticipantIds(message.score);
+
+    return Promise.all([
+        getProfiles([participantId]),
+        getProfiles(participantIds),
+    ]).then(([profile, scoreProfiles]) => {
+        const score = fillScoreWithProfiles(message.score, scoreProfiles, participantIds);
+
+        sendToParticipant(
+            participant[0],
+            ui.sessionState(
+                profile.displayName,
+                message.puzzleIndex,
+                message.puzzleCount,
+                message.puzzle,
+                message.roundPhase,
+                message.roundCountdown,
+                message.startCountdown,
+                message.playerInput,
+                score
+            )
+        );
+    }).catch((err) => {
+        warn('[ws-server]', 'Can not get profiles for session state', err);
+    });
+}
+
 function solutionEvaluated(message) {
     const { participantId, sessionId } = message;
     const participant = hall.get(null, participantId, sessionId);
@@ -209,8 +302,12 @@ function solutionEvaluated(message) {
         return warn('[ws-server]', 'Unknown participant solution evaluation', message);
     }
 
-    sendToPlayer(participant[0], ui.solutionEvaluated(message.result, message.error, message.correct, message.time));
+    sendToParticipant(participant[0], ui.solutionEvaluated(message.result, message.error, message.correct, message.time));
     sendToGameMasters(sessionId, ui.participantSolution(participantId, message.correct, message.time, message.length));
+}
+
+function startCountdownChanged(sessionId, startCountdown) {
+    return sendToSession(sessionId, ui.startCountdownChanged(startCountdown));
 }
 
 function processNewConnection(ws) {
@@ -219,8 +316,8 @@ function processNewConnection(ws) {
             addToLobby(ws, participantId, sessionId);
             phoenix.send(stateService.sessionJoin(sessionId, participantId));
         })
-        .catch((error) => {
-            error('[ws-server]', 'New connection rejected', error);
+        .catch((err) => {
+            error('[ws-server]', 'New connection rejected', err);
 
             rejectConnection(ws);
         });
@@ -247,10 +344,22 @@ function processServerMessage(message) {
     switch (message.name) {
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
+        case MESSAGE_NAME.puzzle:
+            return puzzle(message.sessionId, message.input, message.expected);
+        case MESSAGE_NAME.puzzleChanged:
+            return puzzleChanged(message.sessionId, message.puzzleIndex, message.puzzleName, message.timeLimit);
+        case MESSAGE_NAME.roundCountdownChanged:
+            return roundCountdownChanged(message.sessionId, message.roundCountdown);
+        case MESSAGE_NAME.roundPhaseChanged:
+            return roundPhaseChanged(message.sessionId, message.roundPhase);
+        case MESSAGE_NAME.sessionState:
+            return sessionState(message);
         case MESSAGE_NAME.solutionEvaluated:
             return solutionEvaluated(message);
         case MESSAGE_NAME.createParticipant:
             return createNewParticipant(message.userData);
+        case MESSAGE_NAME.startCountdownChanged:
+            return startCountdownChanged(message.sessionId, message.startCountdown);
         default:
             return warn('[ws-server]', 'Unknown message from server', message.name);
     }
