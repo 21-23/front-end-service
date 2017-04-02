@@ -326,17 +326,17 @@ function processNewConnection(ws) {
 function createNewParticipant(userData) {
     // validation?
     return UserService.create(userData)
-              .then((user) => {
-                  log('[ws-server]', 'Create new user');
+        .then((user) => {
+            log('[ws-server]', 'Create new user');
 
-                  if (!user) {
-                      // Send errors?
-                      return;
-                  }
+            if (!user) {
+                // Send errors?
+                return;
+            }
 
-                  const { uid } = user;
-                  phoenix.send(initService.participantCreated(uid));
-              });
+            const { uid } = user;
+            phoenix.send(initService.participantCreated(uid));
+        });
 }
 
 function processServerMessage(message) {
@@ -357,7 +357,7 @@ function processServerMessage(message) {
         case MESSAGE_NAME.solutionEvaluated:
             return solutionEvaluated(message);
         case MESSAGE_NAME.createParticipant:
-            return createNewParticipant(message.userData);
+            return createNewParticipant(message.participant);
         case MESSAGE_NAME.startCountdownChanged:
             return startCountdownChanged(message.sessionId, message.startCountdown);
         default:

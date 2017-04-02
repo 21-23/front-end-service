@@ -19,7 +19,7 @@ const User = new Schema({
     },
     uid: {
         type: String,
-        default: randomBytes(8).toString('hex'),
+        default: () => randomBytes(8).toString('hex'),
     },
 });
 
