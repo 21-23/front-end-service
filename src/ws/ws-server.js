@@ -1,7 +1,7 @@
 const WebSocketClient = require('uws');
 
 const createPhoenix = require('phoenix');
-const { parseMessage, arnaux, protocol: { frontService, stateService, ui } } = require('message-factory');
+const { parseMessage, arnaux, protocol: { frontService, stateService, initService, ui } } = require('message-factory');
 const { error, warn, log } = require('steno');
 
 const config = require('../../config');
@@ -335,7 +335,7 @@ function createNewParticipant(userData) {
                   }
 
                   const { uid } = user;
-                  phoenix.send(stateService.participantCreated(uid));
+                  phoenix.send(initService.participantCreated(uid));
               });
 }
 
