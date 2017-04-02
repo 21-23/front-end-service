@@ -1,3 +1,5 @@
+const roles = require('../constants/roles');
+
 function ensureSession(sessions, sessionId) {
     let session = sessions.get(sessionId);
 
@@ -17,7 +19,7 @@ function ensureSession(sessions, sessionId) {
 function add(connections, sessions, ws, participantId, sessionId, role) {
     const session = ensureSession(sessions, sessionId);
 
-    if (role === 'game-master') {
+    if (role === roles.GAME_MASTER) {
         session.masters.set(participantId, ws);
     } else {
         session.players.set(participantId, ws);
@@ -36,7 +38,7 @@ function getParticipants(connections, sessions, role, sessionId) {
         return participants;
     }
 
-    const map = role === 'game-master' ? session.masters : session.players;
+    const map = role === roles.GAME_MASTER ? session.masters : session.players;
 
     map.forEach((ws, participantId) => {
         participants.push([ws, participantId, sessionId, role]);
@@ -54,10 +56,10 @@ function getAll(connections, sessions, sessionId) {
     }
 
     session.masters.forEach((ws, participantId) => {
-        participants.push([ws, participantId, sessionId, 'game-master']);
+        participants.push([ws, participantId, sessionId, roles.GAME_MASTER]);
     });
     session.players.forEach((ws, participantId) => {
-        participants.push([ws, participantId, sessionId, 'player']);
+        participants.push([ws, participantId, sessionId, roles.PLAYER]);
     });
 
     return participants;
@@ -81,7 +83,7 @@ function find(connections, sessions, ws, participantId, sessionId, role) {
 
         if (session) {
             if (role) {
-                const map = role === 'game-master' ? session.masters : session.players;
+                const map = role === roles.GAME_MASTER ? session.masters : session.players;
                 const ws = map.get(participantId);
 
                 if (ws) {
@@ -89,11 +91,11 @@ function find(connections, sessions, ws, participantId, sessionId, role) {
                 }
             } else {
                 let ws = session.masters.get(participantId);
-                let assumedRole = 'game-master';
+                let assumedRole = roles.GAME_MASTER;
 
                 if (!ws) {
                     ws = session.players.get(participantId);
-                    assumedRole = 'player';
+                    assumedRole = roles.PLAYER;
                 }
 
                 if (ws) {
@@ -115,7 +117,7 @@ function remove(connections, sessions, ws, participantId, sessionId, role) {
 
     const session = sessions.get(participant[2]);
     if (session) {
-        const map = participant[3] === 'game-master' ? session.masters : session.players;
+        const map = participant[3] === roles.GAME_MASTER ? session.masters : session.players;
         map.delete(participant[1]);
     }
     connections.delete(participant[0]);
@@ -130,8 +132,8 @@ module.exports = function () {
     return {
         add: add.bind(null, connections, sessions),
         remove: remove.bind(null, connections, sessions),
-        getMasters: getParticipants.bind(null, connections, sessions, 'game-master'),
-        getPlayers: getParticipants.bind(null, connections, sessions, 'player'),
+        getMasters: getParticipants.bind(null, connections, sessions, roles.GAME_MASTER),
+        getPlayers: getParticipants.bind(null, connections, sessions, roles.PLAYER),
         getAll: getAll.bind(null, connections, sessions),
         get: find.bind(null, connections, sessions),
     };

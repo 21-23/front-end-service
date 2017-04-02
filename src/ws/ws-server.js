@@ -5,11 +5,10 @@ const { parseMessage, arnaux, protocol: { frontService, stateService, initServic
 const { error, warn, log } = require('steno');
 
 const config = require('../../config');
+const roles = require('../constants/roles');
 
 const Server = WebSocketClient.Server;
 const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
-
-// const UserService = require('../services/user-service');
 
 const createLobby = require('./lobby');
 const createHall = require('./hall');
@@ -33,9 +32,10 @@ function verifyAuth(ws) {
         parseCookie(req, null, () => {
             const uid = req.cookies['secret'];
             const sessionId = req.cookies['sessionId'];
+            const role = req.cookies['role'];
 
             if (uid && sessionId) {
-                resolve([uid, sessionId]);
+                resolve([uid, sessionId, role]);
             } else {
                 reject(`Invalid uid or sessionId: ${uid}, ${sessionId}`);
             }
@@ -154,7 +154,6 @@ function addToHall(ws, participantId, sessionId, role) {
         // need to search by ws only
         removeFromHall(ws);
         phoenix.send(stateService.sessionLeave(sessionId, participantId));
-        sendToGameMasters(sessionId, ui.participantLeft(sessionId, participantId));
     });
     ws.on('message', function onClientMessage(incomingMessage) {
         const { message } = parseMessage(incomingMessage);
@@ -228,6 +227,27 @@ function getProfiles(participantIds) {
 
 // -------------- Messages handlers --------------
 
+function rejectParticipant(participantId, sessionId) {
+    // rejected participant may be in both: lobby or hall
+    let participant = lobby.get(null, participantId, sessionId);
+    if (participant) {
+        removeFromLobby(...participant);
+        return warn('Reject participant from lobby; participantId:', participantId, '; sessionId:', sessionId);
+    }
+
+    participant = hall.get(null, participantId, sessionId);
+    if (participant) {
+        removeFromHall(...participant);
+        return warn('Reject participant from hall; participantId:', participantId, '; sessionId:', sessionId);
+    }
+
+    return warn('Can not reject unknown participant; participantId:', participantId, '; sessionId:', sessionId);
+}
+
+function participantLeft(participantId, sessionId) {
+    sendToGameMasters(sessionId, ui.participantLeft(sessionId, participantId));
+}
+
 function participantIdentified(participantId, sessionId, role) {
     const participant = lobby.get(null, participantId, sessionId);
 
@@ -239,12 +259,17 @@ function participantIdentified(participantId, sessionId, role) {
     clearConnection(participant[0]);
     addToHall(...participant, role);
 
+    if (role === roles.GAME_MASTER) {
+        // no need in sending participantJoined if a new GM is connected
+        return log('New GM joined', sessionId, participantId);
+    }
+
     getProfiles([participantId]).then(([profile]) => {
         if (!profile) {
             warn('Can not get profile for participant', participantId, 'session', sessionId);
         }
 
-        sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, profile.displayName));
+        sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, (profile && profile.displayName) || ''));
     });
 }
 
@@ -267,6 +292,11 @@ function roundPhaseChanged(sessionId, roundPhase) {
 function sessionState(message) {
     const { participantId, sessionId } = message;
     const participant = hall.get(null, participantId, sessionId);
+
+    if (!participant) {
+        return warn('[ws-server]', 'Unknown participant session state', message);
+    }
+
     const participantIds = getScoreParticipantIds(message.score);
 
     return Promise.all([
@@ -312,9 +342,9 @@ function startCountdownChanged(sessionId, startCountdown) {
 
 function processNewConnection(ws) {
     return verifyAuth(ws)
-        .then(([participantId, sessionId]) => {
+        .then(([participantId, sessionId, role]) => {
             addToLobby(ws, participantId, sessionId);
-            phoenix.send(stateService.sessionJoin(sessionId, participantId));
+            phoenix.send(stateService.sessionJoin(sessionId, participantId, role));
         })
         .catch((err) => {
             error('[ws-server]', 'New connection rejected', err);
@@ -344,6 +374,10 @@ function processServerMessage(message) {
     switch (message.name) {
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
+        case MESSAGE_NAME.participantKick:
+            return rejectParticipant(message.participantId, message.sessionId);
+        case MESSAGE_NAME.participantLeft:
+            return participantLeft(message.participantId, message.sessionId);
         case MESSAGE_NAME.puzzle:
             return puzzle(message.sessionId, message.input, message.expected);
         case MESSAGE_NAME.puzzleChanged:
