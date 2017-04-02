@@ -6,6 +6,8 @@ const { initSteno, log } = require('steno');
 const app = require('./src/app');
 const config = require('./config');
 const initWSServer = require('./src/ws/ws-server');
+const UserService = require('./src/services/user-service');
+
 
 initSteno('front-service', 'all');
 
@@ -24,5 +26,6 @@ server.listen(port, () => {
         port: config.get('WS_PORT'),
         cookieParser: app.cookieParser,
         profileLoader: app.profileLoader,
+        userService: UserService,
     });
 });
