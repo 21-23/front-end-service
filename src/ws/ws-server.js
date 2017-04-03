@@ -264,9 +264,14 @@ function roundPhaseChanged(sessionId, roundPhase) {
     sendToSession(sessionId, ui.roundCountdownChanged(roundPhase));
 }
 
-function sessionState(message) {
+function sendGameMasterSessionState(message) {
     const { participantId, sessionId } = message;
-    const participant = hall.get(null, participantId, sessionId);
+    const participant = hall.get(null, participantId, sessionId, roles.GAME_MASTER);
+
+    if (!participant) {
+        return warn('[ws-server]', 'Unknown GM session state', message);
+    }
+
     const participantIds = getScoreParticipantIds(message.score);
 
     return Promise.all([
@@ -277,7 +282,7 @@ function sessionState(message) {
 
         sendToParticipant(
             participant[0],
-            ui.sessionState(
+            ui.gameMasterSessionState(
                 profile.displayName,
                 message.puzzleIndex,
                 message.puzzleCount,
@@ -285,13 +290,40 @@ function sessionState(message) {
                 message.roundPhase,
                 message.roundCountdown,
                 message.startCountdown,
-                message.playerInput,
-                score
+                score,
             )
         );
     }).catch((err) => {
-        warn('[ws-server]', 'Can not get profiles for session state', err);
+        warn('[ws-server]', 'Can not get profiles for GM session state', err);
     });
+}
+
+function sendPlayerSessionState(message) {
+    const { participantId, sessionId } = message;
+    const participant = hall.get(null, participantId, sessionId, roles.PLAYER);
+
+    if (!participant) {
+        return warn('[ws-server]', 'Unknown PLAYER session state', message);
+    }
+
+    return getProfiles([participantId])
+        .then(([profile]) => {
+            sendToParticipant(
+                participant[0],
+                ui.playerSessionState(
+                    profile.displayName,
+                    message.puzzleIndex,
+                    message.puzzleCount,
+                    message.puzzle,
+                    message.roundPhase,
+                    message.roundCountdown,
+                    message.startCountdown,
+                    message.playerInput,
+                )
+            );
+        }).catch((err) => {
+            warn('[ws-server]', 'Can not get profiles for GM session state', err);
+        });
 }
 
 function solutionEvaluated(message) {
@@ -342,8 +374,12 @@ function createNewParticipant(userData) {
 function processServerMessage(message) {
     // TODO: move participant validation here
     switch (message.name) {
+        case MESSAGE_NAME.gameMasterSessionState:
+            return sendGameMasterSessionState(message);
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
+        case MESSAGE_NAME.playerSessionState:
+            return sendPlayerSessionState(message);
         case MESSAGE_NAME.puzzle:
             return puzzle(message.sessionId, message.input, message.expected);
         case MESSAGE_NAME.puzzleChanged:
@@ -352,8 +388,6 @@ function processServerMessage(message) {
             return roundCountdownChanged(message.sessionId, message.roundCountdown);
         case MESSAGE_NAME.roundPhaseChanged:
             return roundPhaseChanged(message.sessionId, message.roundPhase);
-        case MESSAGE_NAME.sessionState:
-            return sessionState(message);
         case MESSAGE_NAME.solutionEvaluated:
             return solutionEvaluated(message);
         case MESSAGE_NAME.createParticipant:
