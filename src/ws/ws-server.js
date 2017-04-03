@@ -93,11 +93,11 @@ function handleClientMessage(ws, message) {
 
     switch (message.name) {
         case MESSAGE_NAME.puzzleIndexSet:
-            return phoenix.send(stateService.puzzleIndexSet(sessionId, message.index));
+            return phoenix.send(stateService.puzzleIndexSet(sessionId, participantId, message.index));
         case MESSAGE_NAME.roundStart:
-            return phoenix.send(stateService.roundStart(sessionId));
+            return phoenix.send(stateService.roundStart(sessionId, participantId));
         case MESSAGE_NAME.roundStop:
-            return phoenix.send(stateService.roundStop(sessionId));
+            return phoenix.send(stateService.roundStop(sessionId, participantId));
         case MESSAGE_NAME.solution:
             return phoenix.send(stateService.participantInput(sessionId, participantId, message.input, Date.now()));
         default:
