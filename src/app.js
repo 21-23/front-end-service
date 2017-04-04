@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser')();
 
 const auth = require('./auth');
 const config = require('../config');
+const roles = require('./constants/roles');
 
 const userService = require('./services/user-service');
 
@@ -39,6 +40,7 @@ app.get('/game.html', (req, res, next) => {
         return res.redirect('/');
     }
     res.cookie('sessionId', req.query.sessionId, { httpOnly: true });
+    res.cookie('role', roles.PLAYER, { httpOnly: true });
 
     if (req.isAuthenticated()) {
         return next();
@@ -53,6 +55,7 @@ app.get('/game-master.html', (req, res, next) => {
         return res.redirect('/');
     }
     res.cookie('sessionId', req.query.sessionId, { httpOnly: true });
+    res.cookie('role', roles.GAME_MASTER, { httpOnly: true });
 
     if (req.isAuthenticated()) {
         return next();
