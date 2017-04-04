@@ -315,7 +315,7 @@ function sendGameMasterSessionState(message) {
                 message.roundPhase,
                 message.roundCountdown,
                 message.startCountdown,
-                score,
+                score
             )
         );
     }).catch((err) => {
@@ -343,7 +343,7 @@ function sendPlayerSessionState(message) {
                     message.roundPhase,
                     message.roundCountdown,
                     message.startCountdown,
-                    message.playerInput,
+                    message.playerInput
                 )
             );
         }).catch((err) => {
