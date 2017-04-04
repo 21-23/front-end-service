@@ -286,7 +286,7 @@ function roundCountdownChanged(sessionId, roundCountdown) {
 }
 
 function roundPhaseChanged(sessionId, roundPhase) {
-    sendToSession(sessionId, ui.roundCountdownChanged(roundPhase));
+    sendToSession(sessionId, ui.roundPhaseChanged(roundPhase));
 }
 
 function sendGameMasterSessionState(message) {
