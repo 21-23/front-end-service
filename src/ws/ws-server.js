@@ -260,7 +260,7 @@ function participantIdentified(participantId, sessionId, role) {
     addToHall(...participant, role);
 
     if (role === roles.GAME_MASTER) {
-        // no need in sending participantJoined if a new GM is connected
+        // it is not required to send participantJoined if a new GM is connected
         return log('New GM joined', sessionId, participantId);
     }
 
