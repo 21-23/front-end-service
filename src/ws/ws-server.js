@@ -245,7 +245,7 @@ function rejectParticipant(participantId, sessionId) {
 }
 
 function participantLeft(participantId, sessionId) {
-    sendToGameMasters(sessionId, ui.participantLeft(sessionId, participantId));
+    sendToGameMasters(sessionId, ui.participantLeft(participantId));
 }
 
 function participantIdentified(participantId, sessionId, role) {
@@ -269,7 +269,7 @@ function participantIdentified(participantId, sessionId, role) {
             warn('Can not get profile for participant', participantId, 'session', sessionId);
         }
 
-        sendToGameMasters(sessionId, ui.participantJoined(sessionId, participantId, (profile && profile.displayName) || ''));
+        sendToGameMasters(sessionId, ui.participantJoined(participantId, (profile && profile.displayName) || ''));
     });
 }
 
