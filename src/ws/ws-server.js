@@ -51,8 +51,8 @@ function clearConnection(ws) {
 }
 
 function rejectConnection(ws) {
-    clearConnection(ws);
     // prevent client phoenix from reconnect
+    // assume that ws has appropriate 'close' handler
     ws.close(4500);
 }
 
@@ -85,12 +85,16 @@ function handleClientMessage(ws, message) {
     const participant = hall.get(ws);
 
     if (!participant) {
-        warn('[ws-server]', 'Message from unknown client', message);
-        return;
+        return warn('[ws-server]', 'Message from unknown client', message);
+    }
+
+    if (!message.name) {
+        return warn('[ws-server]', 'Clinet message without name', message);
     }
 
     const [, participantId, sessionId] = participant;
 
+    // TODO: validate params in every message; we can not trust client messages
     switch (message.name) {
         case MESSAGE_NAME.puzzleIndexSet:
             return phoenix.send(stateService.puzzleIndexSet(sessionId, participantId, message.index));
@@ -107,9 +111,20 @@ function handleClientMessage(ws, message) {
 
 // -------------- Sessions state management --------------
 
+function parseClientMessage(incomingMessage) {
+    try {
+        const { message } = parseMessage(incomingMessage);
+
+        return message;
+    } catch (err) {
+        error('[ws-server]', 'Invalid message from client; Skip it;', incomingMessage);
+    }
+
+    return null;
+}
+
 function removeFromLobby(ws, participantId, sessionId) {
     lobby.remove(ws, participantId, sessionId);
-    rejectConnection(ws);
 }
 
 function addToLobby(ws, participantId, sessionId) {
@@ -118,8 +133,7 @@ function addToLobby(ws, participantId, sessionId) {
     if (participant) {
         // if there is already such participant in lobby
         // remove the existing and add a new one
-        removeFromLobby(...participant);
-        // do not notify session state as nothing is changed except the connection (ws)
+        rejectConnection(participant[0]);
     }
 
     lobby.add(ws, participantId, sessionId);
@@ -127,6 +141,7 @@ function addToLobby(ws, participantId, sessionId) {
         // do not pass participantId and sessionId
         // a new connection with this info may already be added
         // need to search by ws only
+        clearConnection(ws);
         removeFromLobby(ws);
         phoenix.send(stateService.sessionLeave(sessionId, participantId));
     });
@@ -134,7 +149,6 @@ function addToLobby(ws, participantId, sessionId) {
 
 function removeFromHall(ws, participantId, sessionId, role) {
     hall.remove(ws, participantId, sessionId, role);
-    rejectConnection(ws);
 }
 
 function addToHall(ws, participantId, sessionId, role) {
@@ -143,8 +157,7 @@ function addToHall(ws, participantId, sessionId, role) {
     if (participant) {
         // if there is already such participant in the hall
         // remove the existing and add a new one
-        removeFromHall(...participant);
-        // do not notify session state as nothing is changed except the connection (ws)
+        rejectConnection(participant[0]);
     }
 
     hall.add(ws, participantId, sessionId, role);
@@ -152,11 +165,16 @@ function addToHall(ws, participantId, sessionId, role) {
         // do not pass participantId and sessionId
         // a new connection with this info may already be added
         // need to search by ws only
+        clearConnection(ws);
         removeFromHall(ws);
         phoenix.send(stateService.sessionLeave(sessionId, participantId));
     });
     ws.on('message', function onClientMessage(incomingMessage) {
-        const { message } = parseMessage(incomingMessage);
+        const message = parseClientMessage(incomingMessage);
+
+        if (!message) {
+            return rejectConnection(this);
+        }
 
         handleClientMessage(this, message);
     });
@@ -231,13 +249,13 @@ function rejectParticipant(participantId, sessionId) {
     // rejected participant may be in both: lobby or hall
     let participant = lobby.get(null, participantId, sessionId);
     if (participant) {
-        removeFromLobby(...participant);
+        rejectConnection(participant[0]);
         return warn('Reject participant from lobby; participantId:', participantId, '; sessionId:', sessionId);
     }
 
     participant = hall.get(null, participantId, sessionId);
     if (participant) {
-        removeFromHall(...participant);
+        rejectConnection(participant[0]);
         return warn('Reject participant from hall; participantId:', participantId, '; sessionId:', sessionId);
     }
 
