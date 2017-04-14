@@ -293,7 +293,7 @@ function sendGameMasterSessionState(message) {
     return Promise.all([
         getProfiles([participantId]),
         getProfiles(participantIds),
-    ]).then(([profile, scoreProfiles]) => {
+    ]).then(([[profile], scoreProfiles]) => {
         const players = fillScoreWithProfiles(message.players, scoreProfiles, participantIds);
 
         sendToParticipant(
