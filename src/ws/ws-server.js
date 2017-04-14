@@ -186,37 +186,10 @@ function profilesToMap(profiles, participantIds) {
     }, new Map());
 }
 
-function getScoreParticipantIds(score) {
-    if (!score) {
-        // if no score - most probably we're preparing the session state for player
-        return [];
-    }
-
-    const { roundScore, aggregateScore } = score;
-    const participantIds = roundScore.map(playerRoundScore => playerRoundScore.participantId);
-
-    // just in case - check both scores
-    // most probably they contain the same set of participants
-    aggregateScore.forEach((playerAggregatescore) => {
-        if (!participantIds.includes(playerAggregatescore.participantId)) {
-            participantIds.push(playerAggregatescore.participantId);
-        }
-    });
-
-    return participantIds;
-}
-
 function fillScoreWithProfiles(score, profiles, participantIds) {
-    if (!score || !profiles.length) {
-        return score;
-    }
-
     const profilesMap = profilesToMap(profiles, participantIds);
 
-    score.roundScore.forEach((participantScore) => {
-        participantScore.displayName = profilesMap.get(participantScore.participantId).displayName;
-    });
-    score.aggregateScore.forEach((participantScore) => {
+    score.forEach((participantScore) => {
         participantScore.displayName = profilesMap.get(participantScore.participantId).displayName;
     });
 
@@ -225,7 +198,7 @@ function fillScoreWithProfiles(score, profiles, participantIds) {
 
 function getProfiles(participantIds) {
     if (!Array.isArray(participantIds) || !participantIds.length) {
-        return [];
+        return Promise.resolve([]);
     }
 
     return loadProfiles(participantIds).then((profiles) => {
@@ -315,13 +288,13 @@ function sendGameMasterSessionState(message) {
         return warn('[ws-server]', 'Unknown GM session state', message);
     }
 
-    const participantIds = getScoreParticipantIds(message.score);
+    const participantIds = message.players.map(player => player.participantId);
 
     return Promise.all([
         getProfiles([participantId]),
         getProfiles(participantIds),
     ]).then(([profile, scoreProfiles]) => {
-        const score = fillScoreWithProfiles(message.score, scoreProfiles, participantIds);
+        const players = fillScoreWithProfiles(message.players, scoreProfiles, participantIds);
 
         sendToParticipant(
             participant[0],
@@ -333,11 +306,23 @@ function sendGameMasterSessionState(message) {
                 message.roundPhase,
                 message.roundCountdown,
                 message.startCountdown,
-                score
+                players
             )
         );
     }).catch((err) => {
         warn('[ws-server]', 'Can not get profiles for GM session state', err);
+    });
+}
+
+function sendScore(players, sessionId) {
+    const participantIds = players.map(player => player.participantId);
+
+    return getProfiles(participantIds).then((scoreProfiles) => {
+        const personalizedPlayers = fillScoreWithProfiles(players, scoreProfiles, participantIds);
+
+        sendToGameMasters(sessionId, ui.score(personalizedPlayers));
+    }).catch((err) => {
+        warn('[ws-server]', 'Can not get profiles for GM score', err);
     });
 }
 
@@ -419,6 +404,8 @@ function processServerMessage(message) {
     switch (message.name) {
         case MESSAGE_NAME.gameMasterSessionState:
             return sendGameMasterSessionState(message);
+        case MESSAGE_NAME.score:
+            return sendScore(message.players);
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
         case MESSAGE_NAME.playerSessionState:
