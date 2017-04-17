@@ -405,7 +405,7 @@ function processServerMessage(message) {
         case MESSAGE_NAME.gameMasterSessionState:
             return sendGameMasterSessionState(message);
         case MESSAGE_NAME.score:
-            return sendScore(message.players);
+            return sendScore(message.players, message.sessionId);
         case MESSAGE_NAME.participantJoined:
             return participantIdentified(message.participantId, message.sessionId, message.role);
         case MESSAGE_NAME.playerSessionState:
