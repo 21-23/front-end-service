@@ -1,10 +1,14 @@
+const path = require('path');
+
 const GitHubStrategy = require('passport-github').Strategy;
 const TwitterStrategy = require('passport-twitter').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
-const { log, error } = require('steno');
+const { log } = require('steno');
 
-const config = require('../../config.secret');
+const appConfig = require('../../config');
+
+const config = require(path.join('../../', appConfig.get('AUTH_CONFIG')));
 const { findOrCreate } = require('../services/user-service');
 
 const strategies = [
