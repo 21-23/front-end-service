@@ -1,5 +1,5 @@
 node_modules
 _qd-ui
-*.secret.json
+*.secret*.json
 *ui/
 .DS_Store

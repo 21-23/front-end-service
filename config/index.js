@@ -12,6 +12,7 @@ config.defaults({
     WS_PORT: 3001,
     ARNAUX_URL: 'ws://localhost:8888/',
     ARNAUX_IDENTITY: 'front-service',
+    AUTH_CONFIG: 'config.secret.json',
     'session-secret': 'keyboard cat',
     userCacheOptions: {
         maxElements: 1000,
