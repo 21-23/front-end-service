@@ -38,10 +38,10 @@ function verifyAuth(ws) {
             if (uid && sessionId) {
                 resolve([uid, sessionId, role]);
             } else {
-                const url = url.parse(req.url, true);
+                const parsedUrl = url.parse(req.url, true);
 
-                if (req.url && url.pathname === '/gunslinger') {
-                  const data = url.query;
+                if (req.url && parsedUrl.pathname === '/gunslinger') {
+                  const data = parsedUrl.query;
 
                   return resolve([data.id, data.session, 'player']);
                 }
