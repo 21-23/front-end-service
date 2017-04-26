@@ -346,7 +346,8 @@ function sendPlayerSessionState(message) {
                     message.roundPhase,
                     message.roundCountdown,
                     message.startCountdown,
-                    message.playerInput
+                    message.playerInput,
+                    message.solved
                 )
             );
         }).catch((err) => {
