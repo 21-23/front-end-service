@@ -1,3 +1,5 @@
+const url = require('url');
+
 const WebSocketClient = require('uws');
 
 const createPhoenix = require('phoenix');
@@ -17,6 +19,10 @@ const MESSAGE_NAME = frontService.MESSAGE_NAME;
 const DEFAULT_PROFILE = {
     displayName: 'Unknown',
 };
+let ENABLE_GUNSLINGER = config.get('ENABLE_GUNSLINGER');
+// One day, all nconf values would be parsed. Perhaps...
+// https://github.com/plexinc/nconf/commit/edb166fa144b9a89a813e30a029d2da93c5468cc
+ENABLE_GUNSLINGER = ENABLE_GUNSLINGER === true || ENABLE_GUNSLINGER === 'true';
 
 const lobby = createLobby();
 const hall = createHall();
@@ -24,6 +30,23 @@ const hall = createHall();
 let parseCookie = null;
 let loadProfiles = null;
 let createProfile = null;
+
+function verifyGunslingerAuth(req) {
+    const parsedUrl = url.parse(req.url, true);
+
+    if (parsedUrl.pathname !== '/gunslinger' || !parsedUrl.query) {
+        return null;
+    }
+
+    const uid = parsedUrl.query['id'];
+    const sessionId = parsedUrl.query['session'];
+
+    if (!uid || !sessionId) {
+        return null;
+    }
+
+    return [uid, sessionId, roles.GUNSLINGER];
+}
 
 function verifyAuth(ws) {
     const req = ws.upgradeReq;
@@ -37,6 +60,14 @@ function verifyAuth(ws) {
             if (uid && sessionId) {
                 resolve([uid, sessionId, role]);
             } else {
+                if (ENABLE_GUNSLINGER) {
+                    const gunslinger = verifyGunslingerAuth(req);
+
+                    if (gunslinger) {
+                        return resolve(gunslinger);
+                    }
+                }
+
                 reject(`Invalid uid or sessionId: ${uid}, ${sessionId}`);
             }
         });
@@ -371,9 +402,18 @@ function startCountdownChanged(sessionId, startCountdown) {
     return sendToSession(sessionId, ui.startCountdownChanged(startCountdown));
 }
 
+function processNewGunslinger(ws, participantId, sessionId) {
+    addToHall(ws, participantId, sessionId, roles.PLAYER); // all gunslingers are PLAYERs
+    sendToGameMasters(sessionId, ui.participantJoined(participantId, `Gunslinger ${participantId}`));
+}
+
 function processNewConnection(ws) {
     return verifyAuth(ws)
         .then(([participantId, sessionId, role]) => {
+            if (ENABLE_GUNSLINGER && role === roles.GUNSLINGER) {
+                return processNewGunslinger(ws, participantId, sessionId);
+            }
+
             addToLobby(ws, participantId, sessionId);
             phoenix.send(stateService.sessionJoin(sessionId, participantId, role));
         })

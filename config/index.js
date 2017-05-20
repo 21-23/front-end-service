@@ -13,6 +13,7 @@ config.defaults({
     ARNAUX_URL: 'ws://localhost:8888/',
     ARNAUX_IDENTITY: 'front-service',
     AUTH_CONFIG: 'config.secret.json',
+    ENABLE_GUNSLINGER: true,
     'session-secret': 'keyboard cat',
     userCacheOptions: {
         maxElements: 1000,
