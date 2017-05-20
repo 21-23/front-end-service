@@ -9,6 +9,7 @@ const roles = require('../constants/roles');
 
 const Server = WebSocketClient.Server;
 const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
+const url = require('url');
 
 const createLobby = require('./lobby');
 const createHall = require('./hall');
@@ -37,6 +38,14 @@ function verifyAuth(ws) {
             if (uid && sessionId) {
                 resolve([uid, sessionId, role]);
             } else {
+                const parsedUrl = url.parse(req.url, true);
+
+                if (req.url && parsedUrl.pathname === '/gunslinger') {
+                  const data = parsedUrl.query;
+
+                  return resolve([data.id, data.session, 'player']);
+                }
+
                 reject(`Invalid uid or sessionId: ${uid}, ${sessionId}`);
             }
         });
