@@ -23,7 +23,7 @@ const hall = createHall();
 
 let parseCookie = null;
 let loadProfiles = null;
-let UserService = null;
+let createProfile = null;
 
 function verifyAuth(ws) {
     const req = ws.upgradeReq;
@@ -386,7 +386,7 @@ function processNewConnection(ws) {
 
 function createNewParticipant(userData) {
     // validation?
-    return UserService.create(userData)
+    return createProfile(userData)
         .then((user) => {
             log('[ws-server]', 'Create new user');
 
@@ -434,7 +434,7 @@ function processServerMessage(message) {
     }
 }
 
-function createWsServer({ port, cookieParser, profileLoader, userService }) {
+function createWsServer({ port, cookieParser, profileLoader, profileCreator }) {
     const wss = new Server({ port }, () => {
         log('[ws-server]', 'Server is ready on', port);
 
@@ -443,7 +443,7 @@ function createWsServer({ port, cookieParser, profileLoader, userService }) {
 
     parseCookie = cookieParser;
     loadProfiles = profileLoader;
-    UserService = userService;
+    createProfile = profileCreator;
 }
 
 phoenix
