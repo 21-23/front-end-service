@@ -1,4 +1,4 @@
-const LRUCache = require('lru-native');
+const LRUCache = require('lru-cache');
 const { log, error } = require('steno');
 
 const config = require('../../config');

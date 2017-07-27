@@ -16,9 +16,8 @@ config.defaults({
     ENABLE_GUNSLINGER: true,
     'session-secret': 'keyboard cat',
     userCacheOptions: {
-        maxElements: 1000,
+        max: 1000,
         maxAge: 120 * 60 * 1000, // 2 hours
-        size: 100,
     },
 });
 
