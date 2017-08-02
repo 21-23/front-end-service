@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "cross-env NODE_PATH=./ node index.js",
-    "debug": "cross-env NODE_PATH=./ node --inspect --debug-brk index.js",
+    "debug": "cross-env NODE_PATH=./ node --inspect-brk index.js",
     "watch": "cross-env NODE_PATH=./ nodemon index.js",
     "dev": "cross-env NODE_PATH=./ nodemon index.js"
   },
@@ -34,6 +34,7 @@
     "passport-twitter": "^1.0.4",
     "phoenix": "21-23/phoenix#v2.1.0",
     "steno": "21-23/steno#v1.0.0",
+    "uuid": "^3.1.0",
     "uws": "^0.14.1"
   },
   "devDependencies": {
