@@ -81,8 +81,8 @@ module.exports = {
         return user.save();
     },
 
-    findOrCreate(opts) {
-        return User.findOrCreate(opts).then((user) => {
+    findOrCreate(criteria, user) {
+        return User.findOrCreate(criteria, user).then((user) => {
             log('save uncached user');
             cache.set(user.uid, user);
 

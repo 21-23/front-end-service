@@ -23,13 +23,13 @@ const User = new Schema({
     },
 });
 
-User.statics.findOrCreate = function (profile) {
-    return this.findOne(profile)
+User.statics.findOrCreate = function (criteria, user) {
+    return this.findOne(criteria)
         .exec()
         .then((result) => {
             if (result === null) {
                 log('save new user');
-                return new this(profile).save();
+                return new this(user).save();
             }
 
             return result;

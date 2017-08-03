@@ -4,6 +4,7 @@ const GitHubStrategy = require('passport-github').Strategy;
 const TwitterStrategy = require('passport-twitter').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
+const QdAutoStrategy = require('./qd-auto-strategy').Strategy;
 const { log } = require('steno');
 
 const appConfig = require('../../config');
@@ -35,20 +36,34 @@ const strategies = [
         clientSecret: config.GOOGLE_CLIENT_SECRET,
         callbackURL: config.GOOGLE_CALLBACK_URL,
     }, verifyUser.bind(null, 'google')),
+
+    new QdAutoStrategy({
+        callbackURL: config.QD_AUTO_CALLBACK_URL,
+    }, verifyUser.bind(null, 'qd-auto')),
 ];
 
-strategies.scopes = {
-    google: ['https://www.googleapis.com/auth/plus.login'],
+strategies.options = {
+    google: {
+        scope: ['https://www.googleapis.com/auth/plus.login'],
+    },
 };
 
 strategies.providers = strategies.map(strategy => strategy.name);
 
-module.exports = strategies;
+function formatUser(profile, provider) {
+    return {
+        providerId: profile.id,
+        displayName: profile.displayName || profile.username,
+        provider,
+    };
+}
 
 function verifyUser(provider, accessToken, refreshToken, oauthProfile, done) {
     const formattedUser = formatUser(oauthProfile, provider);
+    const criteria = Object.assign({ provider },
+        oauthProfile[Symbol.for('qd-criteria')] || formattedUser);
 
-    findOrCreate(formattedUser)
+    findOrCreate(criteria, formattedUser)
         .then((user) => {
             if (!user) {
                 return done(new Error('Can not find or create user'));
@@ -59,10 +74,4 @@ function verifyUser(provider, accessToken, refreshToken, oauthProfile, done) {
         });
 }
 
-function formatUser(profile, provider) {
-    return {
-        providerId: profile.id,
-        displayName: profile.displayName || profile.username,
-        provider,
-    };
-}
+module.exports = strategies;

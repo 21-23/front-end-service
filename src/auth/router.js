@@ -14,8 +14,8 @@ authRouter.get('/:provider/callback', checkOAuthProviderMiddleware, authenticate
 
 function authenticate(req, res, next) {
     const { provider } = req.params;
-    const strategyScope = strategies.scopes[provider];
-    const authenticator = passport.authenticate(provider, strategyScope ? { scope: strategyScope } : null);
+    const options = strategies.options[provider] || null;
+    const authenticator = passport.authenticate(provider, options);
 
     authenticator(req, res, next);
 }
