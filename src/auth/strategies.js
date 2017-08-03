@@ -60,7 +60,8 @@ function formatUser(profile, provider) {
 
 function verifyUser(provider, accessToken, refreshToken, oauthProfile, done) {
     const formattedUser = formatUser(oauthProfile, provider);
-    const criteria = oauthProfile[Symbol.for('qd-criteria')] || formattedUser;
+    const criteria = Object.assign({ provider },
+        oauthProfile[Symbol.for('qd-criteria')] || formattedUser);
 
     findOrCreate(criteria, formattedUser)
         .then((user) => {
