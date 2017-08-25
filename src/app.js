@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const passport = require('passport');
 const cookieParser = require('cookie-parser')();
+const helmet = require('helmet');
 
 const auth = require('./auth');
 const config = require('../config');
@@ -11,6 +12,9 @@ const userService = require('./services/user-service');
 
 const app = express();
 
+app.use(helmet({
+    dnsPrefetchControl: false,
+}));
 app.use(cookieParser);
 app.use(require('express-session')({
     secret: config.get('session-secret'),
