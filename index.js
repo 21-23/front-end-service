@@ -10,7 +10,7 @@ const initWSServer = require('./src/ws/ws-server');
 initSteno('front-service', 'all');
 
 mongoose.Promise = global.Promise;
-mongoose.connect(config.get('MONGO_URI'));
+mongoose.createConnection(config.get('MONGO_URI'));
 
 const port = config.get('PORT');
 app.set('port', port);
