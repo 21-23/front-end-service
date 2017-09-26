@@ -1,5 +1,5 @@
-function find(connections, sessions, ws, participantId, sessionId) {
-    if (connections.size === 0 && sessions.size === 0) {
+function find(connections, gameSessions, ws, participantId, sessionAlias, game) {
+    if (connections.size === 0 && gameSessions.size === 0) {
         return null;
     }
 
@@ -11,14 +11,15 @@ function find(connections, sessions, ws, participantId, sessionId) {
         }
     }
 
-    if (participantId && sessionId) {
-        const session = sessions.get(sessionId);
-
-        if (session) {
-            const connection = session.get(participantId);
-
-            if (connection) {
-                return [connection, participantId, sessionId];
+    if (participantId && sessionAlias && game) {
+        const gameSession = gameSessions.get(game);
+        if (gameSession) {
+            const session = gameSession.get(sessionAlias);
+            if (session) {
+                const connection = session.get(participantId);
+                if (connection) {
+                    return [connection, participantId, sessionAlias, game];
+                }
             }
         }
     }
@@ -26,39 +27,46 @@ function find(connections, sessions, ws, participantId, sessionId) {
     return null;
 }
 
-function ensureSession(sessions, sessionId) {
-    let session = sessions.get(sessionId);
+function ensureSession(gameSessions, sessionAlias, game) {
+    let gameSession = gameSessions.get(game);
 
-    if (session) {
-        return session;
+    if (!gameSession) {
+        gameSessions.set(game, gameSession = new Map());
     }
 
-    session = new Map();
-    sessions.set(sessionId, session);
+    let session = gameSession.get(sessionAlias);
+
+    if (!session) {
+        gameSession.set(sessionAlias, session = new Map());
+    }
 
     return session;
 }
 
-function add(connections, sessions, ws, participantId, sessionId) {
-    const session = ensureSession(sessions, sessionId);
+function add(connections, gameSessions, ws, participantId, sessionAlias, game) {
+    const session = ensureSession(gameSessions, sessionAlias, game);
 
     session.set(participantId, ws);
-    connections.set(ws, [participantId, sessionId]);
+    connections.set(ws, [participantId, sessionAlias, game]);
 
     return true;
 }
 
-function remove(connections, sessions, ws, participantId, sessionId) {
-    const info = find(connections, sessions, ws, participantId, sessionId);
+function remove(connections, gameSessions, ws, participantId, sessionAlias, game) {
+    const info = find(connections, gameSessions, ws, participantId, sessionAlias, game);
 
     if (!info) {
         return false;
     }
 
-    const session = sessions.get(info[2]);
-    if (session) {
-        session.delete(info[1]);
+    const gameSession = gameSessions.get(info[3]);
+    if (gameSession) {
+        const session = gameSession.get(info[2]);
+        if (session) {
+            session.delete(info[1]);
+        }
     }
+
     connections.delete(info[0]);
 
     return true;
@@ -66,11 +74,11 @@ function remove(connections, sessions, ws, participantId, sessionId) {
 
 module.exports = function () {
     const connections = new Map();
-    const sessions = new Map();
+    const gameSessions = new Map(); // key - game, value - Map<sessionsAlias, Map<participantId, ws>>
 
     return {
-        add: add.bind(null, connections, sessions),
-        remove: remove.bind(null, connections, sessions),
-        get: find.bind(null, connections, sessions),
+        add: add.bind(null, connections, gameSessions),
+        remove: remove.bind(null, connections, gameSessions),
+        get: find.bind(null, connections, gameSessions),
     };
 };
