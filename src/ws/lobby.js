@@ -11,20 +11,26 @@ function find(connections, gameSessions, ws, participantId, sessionAlias, game) 
         }
     }
 
-    if (participantId && sessionAlias && game) {
-        const gameSession = gameSessions.get(game);
-        if (gameSession) {
-            const session = gameSession.get(sessionAlias);
-            if (session) {
-                const connection = session.get(participantId);
-                if (connection) {
-                    return [connection, participantId, sessionAlias, game];
-                }
-            }
-        }
+    if (!participantId || !sessionAlias || !game) {
+        return null;
     }
 
-    return null;
+    const gameSession = gameSessions.get(game);
+    if (!gameSession) {
+        return null;
+    }
+
+    const session = gameSession.get(sessionAlias);
+    if (!session) {
+        return null;
+    }
+
+    const connection = session.get(participantId);
+    if (!connection) {
+        return null;
+    }
+
+    return [connection, participantId, sessionAlias, game];
 }
 
 function ensureSession(gameSessions, sessionAlias, game) {
