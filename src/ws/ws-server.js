@@ -157,41 +157,43 @@ function parseClientMessage(incomingMessage) {
     return null;
 }
 
-function removeFromLobby(ws) {
-    lobby.remove(ws);
-}
-
-function addToLobby(ws, participantId, sessionAlias, game) {
-    const participant = lobby.get(ws, participantId, sessionAlias, game);
+function addToLobby(ws, participantId, sessionAlias, game, role) {
+    const connectionId = lobby.generateConnectionId(participantId, sessionAlias, game, role);
+    let participant = lobby.get(connectionId);
 
     if (participant) {
-        // if there is already such participant in lobby
-        // remove the existing and add a new one
-        rejectConnection(participant[0]);
+        // if there is already such participant in lobby - remove them
+        if (participant.ws) {
+            // participant.ws may be null in case page is refreshed
+            // while participant is in lobby;
+            clearConnection(participant.ws);
+            rejectConnection(participant.ws);
+        }
+        lobby.remove(connectionId);
     }
 
-    lobby.add(ws, participantId, sessionAlias, game);
+    participant = { ws, participantId, sessionAlias, game, role };
+
+    lobby.add(connectionId, participant);
     ws.once('close', () => {
-        // do not pass participantId and sessionAlias
-        // a new connection with this info may already be added
-        // need to search by ws only
         clearConnection(ws);
-        removeFromLobby(ws);
-        phoenix.send(stateService.sessionLeave(game, sessionAlias, undefined, participantId));
+        lobby.disconnect(connectionId);
     });
+
+    return connectionId;
 }
 
-function removeFromHall(ws, participantId, sessionId, role) {
-    hall.remove(ws, participantId, sessionId, role);
-}
-
-function addToHall(ws, participantId, sessionId, role) {
-    const participant = hall.get(ws, participantId, sessionId, role);
+function addToHall(sessionId, { ws, participantId, role }) {
+    const participant = hall.get(null, participantId, sessionId, role);
 
     if (participant) {
         // if there is already such participant in the hall
-        // remove the existing and add a new one
-        rejectConnection(participant[0]);
+        // reject old connection, remove from hall, add a new one
+        const oldWs = participant[0];
+
+        clearConnection(oldWs);
+        rejectConnection(oldWs);
+        hall.remove(oldWs);
     }
 
     hall.add(ws, participantId, sessionId, role);
@@ -200,8 +202,8 @@ function addToHall(ws, participantId, sessionId, role) {
         // a new connection with this info may already be added
         // need to search by ws only
         clearConnection(ws);
-        removeFromHall(ws);
-        phoenix.send(stateService.sessionLeave(undefined, undefined, sessionId, participantId));
+        hall.remove(ws);
+        phoenix.send(stateService.sessionLeave(sessionId, participantId));
     });
     ws.on('message', function onClientMessage(incomingMessage) {
         const message = parseClientMessage(incomingMessage);
@@ -241,7 +243,7 @@ function getProfiles(participantIds) {
         }
 
         return profiles.map((profile, index) => {
-                                                                // mainly requred for gunslingers
+                                                                // TODO: mainly requred for gunslingers
             return profile || Object.assign({}, DEFAULT_PROFILE, { displayName: participantIds[index] });
         });
     }).catch((error) => {
@@ -253,16 +255,9 @@ function getProfiles(participantIds) {
 
 // -------------- Messages handlers --------------
 
-function rejectParticipant({ game, sessionAlias, sessionId, participantId }) {
-    // rejected participant may be in both: lobby or hall
-    let participant = lobby.get(null, participantId, sessionAlias, game);
+function rejectParticipant(participantId, sessionId) {
+    const participant = hall.get(null, participantId, sessionId);
 
-    if (participant) {
-        rejectConnection(participant[0]);
-        return warn('Reject participant from lobby; participantId:', participantId, '; sessionId:', sessionId);
-    }
-
-    participant = hall.get(null, participantId, sessionId);
     if (participant) {
         rejectConnection(participant[0]);
         return warn('Reject participant from hall; participantId:', participantId, '; sessionId:', sessionId);
@@ -275,29 +270,35 @@ function participantLeft(participantId, sessionId) {
     sendToGameMasters(sessionId, ui.participantLeft(participantId));
 }
 
-function participantIdentified({ game, sessionAlias, sessionId, participantId, role }) {
-    const participant = lobby.get(null, participantId, sessionAlias, game);
+function participantIdentified(connectionId, sessionId) {
+    const participant = lobby.get(connectionId);
 
     if (!participant) {
-        return warn('[ws-server]', 'Unknown participant identification', participantId);
+        return warn('[ws-server]', 'Unknown participant identification', connectionId, sessionId);
     }
 
-    const ws = participant[0];
-    lobby.remove(...participant);
-    clearConnection(ws);
-    addToHall(ws, participantId, sessionId, role);
+    if (!participant.ws) {
+        warn('[ws-server]', 'Disconnected participant identification', connectionId, sessionId);
+        return phoenix.send(stateService.sessionLeave(sessionId, participant.participantId));
+    }
 
-    if (role === roles.GAME_MASTER) {
+    lobby.remove(connectionId);
+    clearConnection(participant.ws);
+
+    addToHall(sessionId, participant);
+
+    // TODO: handle gunslinger
+    if (participant.role === roles.GAME_MASTER) {
         // it is not required to send participantJoined if a new GM is connected
-        return log('New GM joined', sessionId, participantId);
+        return log('New GM joined', sessionId, participant);
     }
 
-    getProfiles([participantId]).then(([profile]) => {
+    getProfiles([participant.participantId]).then(([profile]) => {
         if (!profile) {
-            warn('Can not get profile for participant', participantId, 'session', sessionId);
+            warn('Can not get profile for participant', participant, '; sessionId', sessionId);
         }
 
-        sendToGameMasters(sessionId, ui.participantJoined(participantId, (profile && profile.displayName) || ''));
+        sendToGameMasters(sessionId, ui.participantJoined(participant.participantId, profile && profile.displayName));
     });
 }
 
@@ -411,8 +412,9 @@ function startCountdownChanged(sessionId, startCountdown) {
 function processNewConnection(ws) {
     return verifyAuth(ws)
         .then(([participantId, sessionAlias, role, game]) => {
-            addToLobby(ws, participantId, sessionAlias, game);
-            phoenix.send(stateService.sessionJoin(sessionAlias, participantId, role));
+            const connectionId = addToLobby(ws, participantId, sessionAlias, game, role);
+
+            phoenix.send(stateService.sessionJoin(connectionId, game, sessionAlias, participantId, role));
         })
         .catch((err) => {
             error('[ws-server]', 'New connection rejected', err);
@@ -444,12 +446,12 @@ function processServerMessage(message) {
             return sendGameMasterSessionState(message);
         case MESSAGE_NAME.score:
             return sendScore(message.players, message.sessionId);
-        case MESSAGE_NAME.participantJoined:
-            return participantIdentified(message);
+        case MESSAGE_NAME.sessionJoinResult:
+            return participantIdentified(message.connectionId, message.sessionId);
         case MESSAGE_NAME.playerSessionState:
             return sendPlayerSessionState(message);
         case MESSAGE_NAME.participantKick:
-            return rejectParticipant(message);
+            return rejectParticipant(message.participantId, message.sessionId);
         case MESSAGE_NAME.participantLeft:
             return participantLeft(message.participantId, message.sessionId);
         case MESSAGE_NAME.puzzle:
