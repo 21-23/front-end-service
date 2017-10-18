@@ -302,12 +302,12 @@ function participantIdentified(connectionId, sessionId) {
     });
 }
 
-function puzzle(sessionId, input, expected) {
-    sendToSession(sessionId, ui.puzzle(input, expected));
+function puzzle({ sessionId, input, expected, puzzleOptions }) {
+    sendToSession(sessionId, ui.puzzle(input, expected, puzzleOptions));
 }
 
-function puzzleChanged(sessionId, puzzleIndex, puzzleName, timeLimit) {
-    sendToSession(sessionId, ui.puzzleChanged(puzzleIndex, puzzleName, timeLimit));
+function puzzleChanged({ sessionId, puzzleIndex, puzzleName, puzzleOptions }) {
+    sendToSession(sessionId, ui.puzzleChanged(puzzleIndex, puzzleName, puzzleOptions));
 }
 
 function roundCountdownChanged(sessionId, roundCountdown) {
@@ -455,9 +455,9 @@ function processServerMessage(message) {
         case MESSAGE_NAME.participantLeft:
             return participantLeft(message.participantId, message.sessionId);
         case MESSAGE_NAME.puzzle:
-            return puzzle(message.sessionId, message.input, message.expected);
+            return puzzle(message);
         case MESSAGE_NAME.puzzleChanged:
-            return puzzleChanged(message.sessionId, message.puzzleIndex, message.puzzleName, message.timeLimit);
+            return puzzleChanged(message);
         case MESSAGE_NAME.roundCountdownChanged:
             return roundCountdownChanged(message.sessionId, message.roundCountdown);
         case MESSAGE_NAME.roundPhaseChanged:
