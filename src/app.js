@@ -12,6 +12,12 @@ const userService = require('./services/user-service');
 
 const app = express();
 
+function setQdSpecificCookies(res, session, role, game) {
+    res.cookie('session', session, { httpOnly: true });
+    res.cookie('role', role, { httpOnly: true });
+    res.cookie('game', game, { httpOnly: true });
+}
+
 app.use(helmet({
     dnsPrefetchControl: false,
 }));
@@ -39,38 +45,64 @@ app.use(passport.session());
 
 app.use('/auth', auth.router);
 
-app.get('/game.html', (req, res, next) => {
-    if (!req.query.sessionId) {
-        return res.redirect('/');
+app.get('/:game/game.html', (req, res, next) => {
+    if (!req.query.session) {
+        return res.redirect(`/${req.params.game}/`);
     }
-    res.cookie('sessionId', req.query.sessionId, { httpOnly: true });
-    res.cookie('role', roles.PLAYER, { httpOnly: true });
+
+    setQdSpecificCookies(res, req.query.session, roles.PLAYER, req.params.game);
 
     if (req.isAuthenticated()) {
         return next();
     }
 
     res.cookie('returnUrl', req.originalUrl, { httpOnly: true });
-    res.redirect('/login.html');
+    res.redirect(`/${req.params.game}/login.html`);
 });
 
-app.get('/game-master.html', (req, res, next) => {
-    if (!req.query.sessionId) {
-        return res.redirect('/');
+app.get('/:game/game-master.html', (req, res, next) => {
+    if (!req.query.session) {
+        return res.redirect(`/${req.params.game}/`);
     }
-    res.cookie('sessionId', req.query.sessionId, { httpOnly: true });
-    res.cookie('role', roles.GAME_MASTER, { httpOnly: true });
+
+    setQdSpecificCookies(res, req.query.session, roles.GAME_MASTER, req.params.game);
 
     if (req.isAuthenticated()) {
         return next();
     }
 
     res.cookie('returnUrl', req.originalUrl, { httpOnly: true });
-    res.redirect('/login.html');
+    res.redirect(`/${req.params.game}/login.html`);
 });
 
 const staticPath = path.resolve(__dirname, '../static/');
 app.use(express.static(staticPath));
+
+app.get('/:game/:session/gm', (req, res) => {
+    setQdSpecificCookies(res, req.params.session, roles.GAME_MASTER, req.params.game);
+
+    if (req.isAuthenticated()) {
+        return res.redirect(`/${req.params.game}/game-master.html?session=${req.params.session}`);
+    }
+
+    res.cookie('returnUrl', req.originalUrl, { httpOnly: true });
+    res.redirect(`/${req.params.game}/login.html`);
+});
+
+app.get('/:game/:session', (req, res) => {
+    setQdSpecificCookies(res, req.params.session, roles.PLAYER, req.params.game);
+
+    if (req.isAuthenticated()) {
+        return res.redirect(`/${req.params.game}/game.html?session=${req.params.session}`);
+    }
+
+    res.cookie('returnUrl', req.originalUrl, { httpOnly: true });
+    res.redirect(`/${req.params.game}/login.html`);
+});
+
+app.get('/:game/', (req, res) => {
+    res.redirect(`/${req.params.game}/index.html`);
+});
 app.get('/', (req, res) => {
     res.redirect('/index.html');
 });
