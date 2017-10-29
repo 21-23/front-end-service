@@ -285,6 +285,11 @@ function participantIdentified(connectionId, sessionId) {
     lobby.remove(connectionId);
     clearConnection(participant.ws);
 
+    if (!sessionId) {
+        warn('[ws-server]', 'Participant identification failed:', connectionId, sessionId);
+        return rejectConnection(participant.ws);
+    }
+
     addToHall(sessionId, participant);
 
     // TODO: handle gunslinger
