@@ -19,6 +19,7 @@ config.defaults({
         max: 1000,
         maxAge: 120 * 60 * 1000, // 2 hours
     },
+    LOG_LEVEL: 'all',
 });
 
 module.exports = config;

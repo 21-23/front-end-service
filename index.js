@@ -7,7 +7,7 @@ const app = require('./src/app');
 const config = require('./config');
 const initWSServer = require('./src/ws/ws-server');
 
-initSteno('front-service', 'all');
+initSteno('front-service', config.get('LOG_LEVEL'));
 
 mongoose.Promise = global.Promise;
 mongoose.connect(config.get('MONGO_URI'));
