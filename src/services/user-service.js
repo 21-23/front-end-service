@@ -1,7 +1,7 @@
 const LRUCache = require('lru-cache');
-const { log, error } = require('steno');
+const logger = require('../loggers')();
 
-const config = require('../../config');
+const config = require('../config');
 const User = require('../models/UserModel');
 
 const cache = new LRUCache(config.get('userCacheOptions'));
@@ -61,7 +61,7 @@ function fillFromDb(uids, profiles) {
             });
         })
         .catch((err) => {
-            error('Can not find multiple profiles in DB', err);
+            logger.error('Can not find multiple profiles in DB', err);
         });
 }
 
@@ -83,12 +83,12 @@ module.exports = {
 
     findOrCreate(criteria, user) {
         return User.findOrCreate(criteria, user).then((user) => {
-            log('save uncached user');
+            logger.verbose('save uncached user');
             cache.set(user.uid, user);
 
             return user;
         }).catch((err) => {
-            error('Can not find or create profile', err);
+            logger.error('Can not find or create profile', err);
 
             return null;
         });

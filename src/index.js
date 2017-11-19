@@ -1,27 +1,25 @@
 const http = require('http');
 
 const mongoose = require('mongoose');
-const { initSteno, log } = require('steno');
 
-const app = require('./src/app');
+const logger = require('./loggers')();
+const app = require('./app');
 const config = require('./config');
-const initWSServer = require('./src/ws/ws-server');
-
-initSteno('front-service', config.get('LOG_LEVEL'));
+const initWSServer = require('./ws/ws-server');
 
 mongoose.Promise = global.Promise;
-mongoose.connect(config.get('MONGO_URI'));
+mongoose.connect(config.get('DB:URI'));
 
-const port = config.get('PORT');
+const port = config.get('PORT:HTTP');
 app.set('port', port);
 
 const server = http.createServer(app);
 
 server.listen(port, () => {
-    log('Server is ready on', port);
+    logger.info('Server is ready on', port);
 
     initWSServer({
-        port: config.get('WS_PORT'),
+        port: config.get('PORT:WS'),
         cookieParser: app.cookieParser,
         profileLoader: app.profileLoader,
         profileCreator: app.profileCreator,
