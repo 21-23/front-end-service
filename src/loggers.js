@@ -4,7 +4,7 @@ require('winston-mongodb');
 const config = require('./config');
 
 const LOGGERS = [
-    { id: 'ROOT', transports: {} },
+    { id: 'ROOT', transports: [] },
 ];
 
 const LOG_LEVEL = config.get('LOG:LEVEL');
@@ -16,27 +16,27 @@ const defaultLogFile = LOG_FILE === true || LOG_FILE === 'true';
 const fileLogEnabled = LOG_FILE && LOG_FILE !== false && LOG_FILE !== 'false';
 
 if (LOG_CONSOLE) {
-    LOGGERS[0].transports['console'] = {
+    LOGGERS[0].transports.push(new winston.transports.Console({
         level: LOG_LEVEL,
         colorize: true,
         timestamp: true,
         stderrLevels: ['error'],
-    };
+    }));
 }
 
 if (LOG_DB_URI) {
-    LOGGERS[0].transports['MongoDB'] = {
+    LOGGERS[0].transports.push(new winston.transports.MongoDB({
         level: LOG_LEVEL,
         db: LOG_DB_URI,
         collection: 'front-service-log',
         name: 'front-service',
         tryReconnect: true,
         decolorize: true,
-    };
+    }));
 }
 
 if (fileLogEnabled) {
-    LOGGERS[0].transports['file'] = {
+    LOGGERS[0].transports.push(new winston.transports.File({
         level: LOG_LEVEL,
         dirname: 'logs',
         filename: defaultLogFile ? 'front-service.log' : LOG_FILE,
@@ -45,11 +45,11 @@ if (fileLogEnabled) {
         maxFiles: 10,
         tailable: true,
         timestamp: true,
-    };
+    }));
 }
 
 LOGGERS.forEach(({ id, transports }) => {
-    winston.loggers.add(id, transports);
+    winston.loggers.add(id, { transports });
 });
 
 module.exports = function getLogger(id = 'ROOT') {
