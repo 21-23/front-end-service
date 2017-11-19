@@ -5,11 +5,11 @@ const TwitterStrategy = require('passport-twitter').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
 const QdAutoStrategy = require('./qd-auto-strategy').Strategy;
-const { log } = require('steno');
+const logger = require('../loggers')();
 
-const appConfig = require('../../config');
+const appConfig = require('../config');
 
-const config = require(path.join('../../', appConfig.get('AUTH_CONFIG')));
+const config = require(path.join('../../', appConfig.get('AUTH:CONFIG')));
 const { findOrCreate } = require('../services/user-service');
 
 const strategies = [
@@ -69,7 +69,7 @@ function verifyUser(provider, accessToken, refreshToken, oauthProfile, done) {
                 return done(new Error('Can not find or create user'));
             }
 
-            log('Verified user', user);
+            logger.verbose('Verified user', user);
             done(null, user);
         });
 }

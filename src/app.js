@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser')();
 const helmet = require('helmet');
 
 const auth = require('./auth');
-const config = require('../config');
+const config = require('./config');
 const roles = require('./constants/roles');
 
 const userService = require('./services/user-service');

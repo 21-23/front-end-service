@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env NODE_PATH=./ node index.js",
-    "debug": "cross-env NODE_PATH=./ node --inspect-brk index.js",
-    "start:container": "cross-env NODE_PATH=./ node index.js",
-    "watch": "cross-env NODE_PATH=./ nodemon index.js",
-    "dev": "cross-env NODE_PATH=./ nodemon index.js"
+    "start": "cross-env NODE_PATH=./ node ./src/index.js",
+    "debug": "cross-env NODE_PATH=./ node --inspect-brk ./src/index.js",
+    "start:container": "cross-env NODE_PATH=./ node ./src/index.js",
+    "watch": "cross-env NODE_PATH=./ nodemon ./src/index.js",
+    "dev": "cross-env NODE_PATH=./ nodemon ./src/index.js"
   },
   "repository": {
     "type": "git",
@@ -34,9 +34,10 @@
     "passport-google-oauth2": "^0.1.6",
     "passport-twitter": "^1.0.4",
     "phoenix": "21-23/phoenix#v2.1.0",
-    "steno": "21-23/steno#v1.0.0",
     "uuid": "^3.1.0",
-    "uws": "^0.14.1"
+    "uws": "^0.14.1",
+    "winston": "2.4.0",
+    "winston-mongodb": "3.0.1"
   },
   "devDependencies": {
     "eslint": "^3.14.0",

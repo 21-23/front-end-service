@@ -4,13 +4,13 @@ const WebSocketClient = require('uws');
 
 const createPhoenix = require('phoenix');
 const { parseMessage, arnaux, protocol: { frontService, stateService, initService, ui } } = require('message-factory');
-const { error, warn, log } = require('steno');
+const logger = require('../loggers')();
 
-const config = require('../../config');
+const config = require('../config');
 const roles = require('../constants/roles');
 
 const Server = WebSocketClient.Server;
-const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX_URL'), timeout: 500 });
+const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX:URL'), timeout: 500 });
 
 const createLobby = require('./lobby');
 const createHall = require('./hall');
@@ -19,7 +19,7 @@ const MESSAGE_NAME = frontService.MESSAGE_NAME;
 const DEFAULT_PROFILE = {
     displayName: 'Unknown',
 };
-let ENABLE_GUNSLINGER = config.get('ENABLE_GUNSLINGER');
+let ENABLE_GUNSLINGER = config.get('GUNSLINGERS');
 // One day, all nconf values would be parsed. Perhaps...
 // https://github.com/plexinc/nconf/commit/edb166fa144b9a89a813e30a029d2da93c5468cc
 ENABLE_GUNSLINGER = ENABLE_GUNSLINGER === true || ENABLE_GUNSLINGER === 'true';
@@ -119,11 +119,11 @@ function handleClientMessage(ws, message) {
     const participant = hall.get(ws);
 
     if (!participant) {
-        return warn('[ws-server]', 'Message from unknown client', message);
+        return logger.warn('[ws-server]', 'Message from unknown client', message);
     }
 
     if (!message.name) {
-        return warn('[ws-server]', 'Clinet message without name', message);
+        return logger.warn('[ws-server]', 'Clinet message without name', message);
     }
 
     const [, participantId, sessionId] = participant;
@@ -139,7 +139,7 @@ function handleClientMessage(ws, message) {
         case MESSAGE_NAME.solution:
             return phoenix.send(stateService.participantInput(sessionId, participantId, message.input, Date.now()));
         default:
-            return warn('[ws-server]', 'Unknown message from client', message.name);
+            return logger.warn('[ws-server]', 'Unknown message from client', message.name);
     }
 }
 
@@ -151,7 +151,7 @@ function parseClientMessage(incomingMessage) {
 
         return message;
     } catch (err) {
-        error('[ws-server]', 'Invalid message from client; Skip it;', incomingMessage);
+        logger.error('[ws-server]', 'Invalid message from client; Skip it;', incomingMessage);
     }
 
     return null;
@@ -243,11 +243,12 @@ function getProfiles(participantIds) {
         }
 
         return profiles.map((profile, index) => {
-                                                                // TODO: mainly requred for gunslingers
+            // in most cases "profile" will exist => main flow is not affected;
+            // mix in displayName for gunslingers;
             return profile || Object.assign({}, DEFAULT_PROFILE, { displayName: participantIds[index] });
         });
     }).catch((error) => {
-        warn('[ws-server]', 'Error in profile loading', error);
+        logger.warn('[ws-server]', 'Error in profile loading', error);
 
         return Array(participantIds.length).fill(DEFAULT_PROFILE);
     });
@@ -260,10 +261,10 @@ function rejectParticipant(participantId, sessionId) {
 
     if (participant) {
         rejectConnection(participant[0]);
-        return warn('Reject participant from hall; participantId:', participantId, '; sessionId:', sessionId);
+        return logger.warn('Reject participant from hall; participantId:', participantId, '; sessionId:', sessionId);
     }
 
-    return warn('Can not reject unknown participant; participantId:', participantId, '; sessionId:', sessionId);
+    return logger.warn('Can not reject unknown participant; participantId:', participantId, '; sessionId:', sessionId);
 }
 
 function participantLeft(participantId, sessionId) {
@@ -274,11 +275,11 @@ function participantIdentified(connectionId, sessionId) {
     const participant = lobby.get(connectionId);
 
     if (!participant) {
-        return warn('[ws-server]', 'Unknown participant identification', connectionId, sessionId);
+        return logger.warn('[ws-server]', 'Unknown participant identification', connectionId, sessionId);
     }
 
     if (!participant.ws) {
-        warn('[ws-server]', 'Disconnected participant identification', connectionId, sessionId);
+        logger.warn('[ws-server]', 'Disconnected participant identification', connectionId, sessionId);
         return phoenix.send(stateService.sessionLeave(sessionId, participant.participantId));
     }
 
@@ -286,21 +287,20 @@ function participantIdentified(connectionId, sessionId) {
     clearConnection(participant.ws);
 
     if (!sessionId) {
-        warn('[ws-server]', 'Participant identification failed:', connectionId, sessionId);
+        logger.warn('[ws-server]', 'Participant identification failed:', connectionId, sessionId);
         return rejectConnection(participant.ws);
     }
 
     addToHall(sessionId, participant);
 
-    // TODO: handle gunslinger
     if (participant.role === roles.GAME_MASTER) {
         // it is not required to send participantJoined if a new GM is connected
-        return log('New GM joined', sessionId, participant);
+        return logger.info('[ws-server]', 'New GM joined', sessionId, participant);
     }
 
     getProfiles([participant.participantId]).then(([profile]) => {
         if (!profile) {
-            warn('Can not get profile for participant', participant, '; sessionId', sessionId);
+            logger.warn('[ws-server]', 'Can not get profile for participant', participant, '; sessionId', sessionId);
         }
 
         sendToGameMasters(sessionId, ui.participantJoined(participant.participantId, profile && profile.displayName));
@@ -328,7 +328,7 @@ function sendGameMasterSessionState(message) {
     const participant = hall.get(null, participantId, sessionId, roles.GAME_MASTER);
 
     if (!participant) {
-        return warn('[ws-server]', 'Unknown GM session state', message);
+        return logger.warn('[ws-server]', 'Unknown GM session state', message);
     }
 
     const participantIds = message.players.map(player => player.participantId);
@@ -353,7 +353,7 @@ function sendGameMasterSessionState(message) {
             )
         );
     }).catch((err) => {
-        warn('[ws-server]', 'Can not get profiles for GM session state', err);
+        logger.warn('[ws-server]', 'Can not get profiles for GM session state', err);
     });
 }
 
@@ -365,7 +365,7 @@ function sendScore(players, sessionId) {
 
         sendToGameMasters(sessionId, ui.score(personalizedPlayers));
     }).catch((err) => {
-        warn('[ws-server]', 'Can not get profiles for GM score', err);
+        logger.warn('[ws-server]', 'Can not get profiles for GM score', err);
     });
 }
 
@@ -374,7 +374,7 @@ function sendPlayerSessionState(message) {
     const participant = hall.get(null, participantId, sessionId, roles.PLAYER);
 
     if (!participant) {
-        return warn('[ws-server]', 'Unknown PLAYER session state', message);
+        return logger.warn('[ws-server]', 'Unknown PLAYER session state', message);
     }
 
     return getProfiles([participantId])
@@ -394,7 +394,7 @@ function sendPlayerSessionState(message) {
                 )
             );
         }).catch((err) => {
-            warn('[ws-server]', 'Can not get profiles for GM session state', err);
+            logger.warn('[ws-server]', 'Can not get profiles for GM session state', err);
         });
 }
 
@@ -403,7 +403,7 @@ function solutionEvaluated(message) {
     const participant = hall.get(null, participantId, sessionId);
 
     if (!participant) {
-        return warn('[ws-server]', 'Unknown participant solution evaluation', message);
+        return logger.warn('[ws-server]', 'Unknown participant solution evaluation', message);
     }
 
     sendToParticipant(participant[0], ui.solutionEvaluated(message.result, message.error, message.correct, message.time));
@@ -422,7 +422,7 @@ function processNewConnection(ws) {
             phoenix.send(stateService.sessionJoin(connectionId, game, sessionAlias, participantId, role));
         })
         .catch((err) => {
-            error('[ws-server]', 'New connection rejected', err);
+            logger.error('[ws-server]', 'New connection rejected', err);
 
             rejectConnection(ws);
         });
@@ -432,7 +432,7 @@ function createNewParticipant(userData) {
     // validation?
     return createProfile(userData)
         .then((user) => {
-            log('[ws-server]', 'Create new user');
+            logger.info('[ws-server]', 'Create new user');
 
             if (!user) {
                 // Send errors?
@@ -474,13 +474,13 @@ function processServerMessage(message) {
         case MESSAGE_NAME.startCountdownChanged:
             return startCountdownChanged(message.sessionId, message.startCountdown);
         default:
-            return warn('[ws-server]', 'Unknown message from server', message.name);
+            return logger.warn('[ws-server]', 'Unknown message from server', message.name);
     }
 }
 
 function createWsServer({ port, cookieParser, profileLoader, profileCreator }) {
     const wss = new Server({ port }, () => {
-        log('[ws-server]', 'Server is ready on', port);
+        logger.info('[ws-server]', 'Server is ready on', port);
 
         wss.on('connection', processNewConnection);
     });
@@ -492,11 +492,11 @@ function createWsServer({ port, cookieParser, profileLoader, profileCreator }) {
 
 phoenix
     .on('connected', () => {
-        log('[ws-server]', 'phoenix is alive');
-        phoenix.send(arnaux.checkin(config.get('ARNAUX_IDENTITY')));
+        logger.info('[ws-server]', 'phoenix is alive');
+        phoenix.send(arnaux.checkin(config.get('ARNAUX:IDENTITY')));
     })
     .on('disconnected', () => {
-        error('[ws-server]', 'phoenix disconnected');
+        logger.error('[ws-server]', 'phoenix disconnected');
     })
     .on('message', (incomingMessage) => {
         const { message } = parseMessage(incomingMessage.data);
