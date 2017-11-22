@@ -33,7 +33,7 @@ function logOut(req, res) {
 
     res.clearCookie('secret');
     res.clearCookie('sessionId');
-    res.redirect('/');
+    res.redirect(`/${req.cookies['game'] || ''}`);
 }
 
 module.exports = authRouter;
