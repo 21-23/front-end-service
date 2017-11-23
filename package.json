@@ -18,10 +18,9 @@
   "license": "LGPL-3.0",
   "private": true,
   "dependencies": {
-    "body-parser": "^1.16.0",
     "cookie-parser": "^1.4.3",
     "cross-env": "^3.1.4",
-    "express": "^4.14.0",
+    "express": "4.16.2",
     "express-session": "^1.15.0",
     "helmet": "^3.8.1",
     "lru-cache": "^4.1.1",
