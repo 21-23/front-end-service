@@ -3,7 +3,7 @@ const url = require('url');
 const WebSocketClient = require('uws');
 
 const createPhoenix = require('phoenix');
-const { parseMessage, arnaux, protocol: { frontService, stateService, initService, ui } } = require('message-factory');
+const { parseMessage, arnaux, protocol: { frontService, stateService, initService, ui, identity } } = require('message-factory');
 const logger = require('../loggers')();
 
 const config = require('../config');
@@ -493,7 +493,7 @@ function createWsServer({ port, cookieParser, profileLoader, profileCreator }) {
 phoenix
     .on('connected', () => {
         logger.info('[ws-server]', 'phoenix is alive');
-        phoenix.send(arnaux.checkin(config.get('ARNAUX:IDENTITY')));
+        phoenix.send(arnaux.checkin(identity.FRONT_SERVICE));
     })
     .on('disconnected', () => {
         logger.error('[ws-server]', 'phoenix disconnected');
