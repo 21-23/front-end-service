@@ -2,7 +2,7 @@
   "name": "front-end-service",
   "version": "2.2.0",
   "description": "",
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
     "start": "cross-env NODE_PATH=./ node ./src/index.js",
     "debug": "cross-env NODE_PATH=./ node --inspect-brk ./src/index.js",
@@ -17,6 +17,10 @@
   "author": "21-23",
   "license": "LGPL-3.0",
   "private": true,
+  "engines": {
+    "node": ">=8.9.3"
+  },
+  "bugs": "https://github.com/21-23/front-end-service/issues",
   "dependencies": {
     "cookie-parser": "^1.4.3",
     "cross-env": "^3.1.4",
@@ -26,7 +30,6 @@
     "lru-cache": "^4.1.1",
     "message-factory": "github:21-23/message-factory#v6.2.1",
     "mongoose": "^4.10.8",
-    "morgan": "^1.7.0",
     "nconf": "^0.8.4",
     "passport": "^0.3.2",
     "passport-facebook": "^2.1.1",
