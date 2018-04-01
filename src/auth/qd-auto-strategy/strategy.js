@@ -16,9 +16,9 @@ function Strategy(options, verify) {
 
 util.inherits(Strategy, passport.Strategy);
 
-Strategy.prototype.authenticate = function (req) {
+Strategy.prototype.authenticate = function (req, options) {
     if (!req.query || req.query.qdAutoDone !== 'done') {
-        const callbackURL = new URL(this._callbackURL);
+        const callbackURL = new URL(options.callbackURL || this._callbackURL);
 
         callbackURL.searchParams.append('qdAutoDone', 'done');
         return this.redirect(callbackURL.href);

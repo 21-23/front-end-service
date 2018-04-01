@@ -1,3 +1,5 @@
+const url = require('url');
+
 const express = require('express');
 const passport = require('passport');
 
@@ -14,7 +16,14 @@ authRouter.get('/:provider/callback', checkOAuthProviderMiddleware, authenticate
 
 function authenticate(req, res, next) {
     const { provider } = req.params;
-    const options = strategies.options[provider] || null;
+    const options = strategies.options[provider] || {};
+
+    options.callbackURL = url.format({
+        protocol: req.protocol,
+        host: req.get('host'),
+        pathname: `/auth/${provider}/callback`,
+    });
+
     const authenticator = passport.authenticate(provider, options);
 
     authenticator(req, res, next);
