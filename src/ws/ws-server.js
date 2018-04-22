@@ -349,7 +349,8 @@ function sendGameMasterSessionState(message) {
                 message.roundPhase,
                 message.roundCountdown,
                 message.startCountdown,
-                players
+                players,
+                message.sandboxStatus
             )
         );
     }).catch((err) => {
@@ -414,6 +415,10 @@ function startCountdownChanged(sessionId, startCountdown) {
     return sendToSession(sessionId, ui.startCountdownChanged(startCountdown));
 }
 
+function sendSandboxStatus(sessionId, status) {
+    return sendToGameMasters(sessionId, ui.sandboxStatus(status));
+}
+
 function processNewConnection(ws) {
     return verifyAuth(ws)
         .then(([participantId, sessionAlias, role, game]) => {
@@ -473,6 +478,8 @@ function processServerMessage(message) {
             return createNewParticipant(message.participant);
         case MESSAGE_NAME.startCountdownChanged:
             return startCountdownChanged(message.sessionId, message.startCountdown);
+        case MESSAGE_NAME.sandboxStatus:
+            return sendSandboxStatus(message.sessionId, message.status);
         default:
             return logger.warn('[ws-server]', 'Unknown message from server', message.name);
     }
