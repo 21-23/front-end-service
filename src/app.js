@@ -18,6 +18,8 @@ function setQdSpecificCookies(res, session, role, game) {
     res.cookie('game', game, { httpOnly: true });
 }
 
+app.enable('trust proxy');
+
 app.use(helmet({
     dnsPrefetchControl: false,
 }));

@@ -20,7 +20,7 @@ function authenticate(req, res, next) {
 
     options.callbackURL = url.format({
         protocol: req.protocol,
-        host: req.get('host'),
+        host: req.hostname,
         pathname: `/auth/${provider}/callback`,
     });
 
