@@ -24,6 +24,9 @@ let ENABLE_GUNSLINGER = config.get('GUNSLINGERS');
 // https://github.com/plexinc/nconf/commit/edb166fa144b9a89a813e30a029d2da93c5468cc
 ENABLE_GUNSLINGER = ENABLE_GUNSLINGER === true || ENABLE_GUNSLINGER === 'true';
 
+let SOLUTION_SYNC_ONLY = config.get('SOLUTION_SYNC_ONLY');
+SOLUTION_SYNC_ONLY = SOLUTION_SYNC_ONLY === true || SOLUTION_SYNC_ONLY === 'true';
+
 const lobby = createLobby();
 const hall = createHall();
 
@@ -408,7 +411,15 @@ function solutionEvaluated(message) {
     }
 
     sendToParticipant(participant[0], ui.solutionEvaluated(message.result, message.error, message.correct, message.time));
-    sendToGameMasters(sessionId, ui.participantSolution(participantId, message.correct, message.time, message.length));
+    if (!SOLUTION_SYNC_ONLY) {
+        sendToGameMasters(sessionId, ui.participantSolution(participantId, message.correct, message.time, message.length));
+    }
+}
+
+function solutionSync(message) {
+    const { sessionId, solutions } = message;
+
+    sendToGameMasters(sessionId, ui.solutionSync(solutions));
 }
 
 function startCountdownChanged(sessionId, startCountdown) {
@@ -474,6 +485,8 @@ function processServerMessage(message) {
             return roundPhaseChanged(message.sessionId, message.roundPhase);
         case MESSAGE_NAME.solutionEvaluated:
             return solutionEvaluated(message);
+        case MESSAGE_NAME.solutionSync:
+            return solutionSync(message);
         case MESSAGE_NAME.createParticipant:
             return createNewParticipant(message.participant);
         case MESSAGE_NAME.startCountdownChanged:

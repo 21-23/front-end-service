@@ -19,6 +19,7 @@ config.defaults({
         maxAge: 120 * 60 * 1000, // 2 hours
     },
     LOG_LEVEL: 'all',
+    SOLUTION_SYNC_ONLY: false,
 });
 
 module.exports = config;
