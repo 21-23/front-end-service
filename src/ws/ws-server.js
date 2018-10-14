@@ -24,7 +24,7 @@ let ENABLE_GUNSLINGER = config.get('GUNSLINGERS');
 // https://github.com/plexinc/nconf/commit/edb166fa144b9a89a813e30a029d2da93c5468cc
 ENABLE_GUNSLINGER = ENABLE_GUNSLINGER === true || ENABLE_GUNSLINGER === 'true';
 
-let SOLUTION_SYNC_ONLY = config.get('SOLUTION_SYNC_ONLY');
+let SOLUTION_SYNC_ONLY = config.get('SOLUTION:SYNC:ONLY');
 SOLUTION_SYNC_ONLY = SOLUTION_SYNC_ONLY === true || SOLUTION_SYNC_ONLY === 'true';
 
 const lobby = createLobby();
