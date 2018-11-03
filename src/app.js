@@ -1,5 +1,4 @@
 const express = require('express');
-const path = require('path');
 const passport = require('passport');
 const cookieParser = require('cookie-parser')();
 const helmet = require('helmet');
@@ -47,37 +46,38 @@ app.use(passport.session());
 
 app.use('/auth', auth.router);
 
-const staticPath = path.resolve(__dirname, '../static/');
-// the line below serves index.html, login.html, resources for game.html
-app.use(express.static(staticPath));
-
-// the line below serves game-master.html
 app.get('/:game/:session/gm', (req, res) => {
     setQdSpecificCookies(res, req.params.session, roles.GAME_MASTER, req.params.game);
 
     if (req.isAuthenticated()) {
-        return res.sendFile(`${req.params.game}/game-master.html`, { root: staticPath });
+        return res
+            .status(305)
+            .location(`${req.params.game}/game-master.html`)
+            .end();
     }
 
-    res.cookie('returnUrl', req.originalUrl, { httpOnly: true });
-    res.redirect(`/${req.params.game}/login.html`);
+    res
+        .cookie('returnUrl', req.originalUrl, { httpOnly: true })
+        .status(401)
+        .location(`/${req.params.game}/login.html`)
+        .end();
 });
 
-// the line below serves resources for game-master.html
-app.get('/:game/:session/*', (req, res) => {
-    return res.sendFile(`${req.params.game}/${req.params[0]}`, { root: staticPath });
-});
-
-// the line below serves game.html
 app.get('/:game/:session', (req, res) => {
     setQdSpecificCookies(res, req.params.session, roles.PLAYER, req.params.game);
 
     if (req.isAuthenticated()) {
-        return res.sendFile(`${req.params.game}/game.html`, { root: staticPath });
+        return res
+            .status(305)
+            .location(`${req.params.game}/game.html`)
+            .end();
     }
 
-    res.cookie('returnUrl', req.originalUrl, { httpOnly: true });
-    res.redirect(`/${req.params.game}/login.html`);
+    res
+        .cookie('returnUrl', req.originalUrl, { httpOnly: true })
+        .status(401)
+        .location(`/${req.params.game}/login.html`)
+        .end();
 });
 
 app.use((req, res, next) => {
