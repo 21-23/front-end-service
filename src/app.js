@@ -46,30 +46,21 @@ app.use(passport.session());
 
 app.use('/auth', auth.router);
 
-app.get('/:game/:session/gm', (req, res) => {
-    setQdSpecificCookies(res, req.params.session, roles.GAME_MASTER, req.params.game);
+app.get('/:game/:session', (req, res) => {
+    let role = roles.PLAYER;
+    let indexFilename = 'game';
 
-    if (req.isAuthenticated()) {
-        return res
-            .status(305)
-            .location(`${req.params.game}/game-master.html`)
-            .end();
+    if ('gm' in req.query) {
+        role = roles.GAME_MASTER;
+        indexFilename = 'game-master';
     }
 
-    res
-        .cookie('returnUrl', req.originalUrl, { httpOnly: true })
-        .status(401)
-        .location(`/${req.params.game}/login.html`)
-        .end();
-});
-
-app.get('/:game/:session', (req, res) => {
-    setQdSpecificCookies(res, req.params.session, roles.PLAYER, req.params.game);
+    setQdSpecificCookies(res, req.params.session, role, req.params.game);
 
     if (req.isAuthenticated()) {
         return res
             .status(305)
-            .location(`${req.params.game}/game.html`)
+            .location(`${req.params.game}/${indexFilename}.html`)
             .end();
     }
 
