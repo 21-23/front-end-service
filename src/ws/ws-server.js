@@ -368,6 +368,18 @@ function sendScore(players, sessionId) {
         const personalizedPlayers = fillScoreWithProfiles(players, scoreProfiles, participantIds);
 
         sendToGameMasters(sessionId, ui.score(personalizedPlayers));
+
+        const commonMeta = { total: personalizedPlayers.length };
+        personalizedPlayers.forEach((player, index) => {
+            const participant = hall.get(null, player.participantId, sessionId, roles.PLAYER);
+
+            if (!participant) {
+                return logger.warn('[ws-server]', 'Unknown PLAYER score', player);
+            }
+
+            const meta = Object.assign({ position: index }, commonMeta);
+            sendToParticipant(participant[0], ui.playerScore(player, meta));
+        });
     }).catch((err) => {
         logger.warn('[ws-server]', 'Can not get profiles for GM score', err);
     });
