@@ -274,7 +274,7 @@ function participantLeft(participantId, sessionId) {
     sendToGameMasters(sessionId, ui.participantLeft(participantId));
 }
 
-function participantIdentified(connectionId, sessionId) {
+function participantIdentified(connectionId, sessionId, reason) {
     const participant = lobby.get(connectionId);
 
     if (!participant) {
@@ -292,6 +292,10 @@ function participantIdentified(connectionId, sessionId) {
     if (!sessionId) {
         logger.warn('[ws-server]', 'Participant identification failed:', connectionId, sessionId);
         return rejectConnection(participant.ws);
+    }
+
+    if (reason) {
+        return sendToParticipant(participant.ws, ui.playerJoinFailure(reason));
     }
 
     addToHall(sessionId, participant);
@@ -480,7 +484,7 @@ function processServerMessage(message) {
         case MESSAGE_NAME.score:
             return sendScore(message.players, message.sessionId);
         case MESSAGE_NAME.sessionJoinResult:
-            return participantIdentified(message.connectionId, message.sessionId);
+            return participantIdentified(message.connectionId, message.sessionId, message.reason);
         case MESSAGE_NAME.playerSessionState:
             return sendPlayerSessionState(message);
         case MESSAGE_NAME.participantKick:

@@ -28,7 +28,7 @@
     "express-session": "^1.15.0",
     "helmet": "^3.8.1",
     "lru-cache": "^4.1.1",
-    "message-factory": "github:21-23/message-factory#v6.5.0",
+    "message-factory": "github:21-23/message-factory#v6.6.0",
     "mongoose": "^4.10.8",
     "nconf": "^0.8.4",
     "passport": "^0.3.2",
