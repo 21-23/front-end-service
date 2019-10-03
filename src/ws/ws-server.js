@@ -289,13 +289,14 @@ function participantIdentified(connectionId, sessionId, reason) {
     lobby.remove(connectionId);
     clearConnection(participant.ws);
 
+    if (reason) {
+        logger.warn('[ws-server]', 'Participant identification failed with reason:', connectionId, reason);
+        return sendToParticipant(participant.ws, ui.playerJoinFailure(reason));
+    }
+
     if (!sessionId) {
         logger.warn('[ws-server]', 'Participant identification failed:', connectionId, sessionId);
         return rejectConnection(participant.ws);
-    }
-
-    if (reason) {
-        return sendToParticipant(participant.ws, ui.playerJoinFailure(reason));
     }
 
     addToHall(sessionId, participant);
