@@ -60,6 +60,7 @@ app.get('/:game/:session', (req, res) => {
     if (req.isAuthenticated()) {
         return res
             .status(305)
+            .set('Content-Type', 'text/html')
             .location(`${req.params.game}/${indexFilename}.html`)
             .end();
     }
