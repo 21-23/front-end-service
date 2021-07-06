@@ -22,10 +22,10 @@
   },
   "bugs": "https://github.com/21-23/front-end-service/issues",
   "dependencies": {
-    "cookie-parser": "^1.4.3",
+    "cookie-parser": "^1.4.5",
     "cross-env": "^3.1.4",
-    "express": "4.16.2",
-    "express-session": "^1.15.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.2",
     "helmet": "^3.8.1",
     "lru-cache": "^4.1.1",
     "message-factory": "github:21-23/message-factory#v6.6.0",
@@ -38,9 +38,9 @@
     "passport-twitter": "^1.0.4",
     "phoenix": "github:21-23/phoenix#v2.5.1",
     "uuid": "^3.1.0",
-    "uws": "^0.14.1",
     "winston": "2.4.0",
-    "winston-mongodb": "3.0.1"
+    "winston-mongodb": "3.0.1",
+    "ws": "^7.5.2"
   },
   "devDependencies": {
     "eslint": "^3.14.0",
@@ -48,5 +48,9 @@
     "eslint-plugin-import": "^2.2.0",
     "husky": "^0.13.0",
     "nodemon": "^1.11.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.3",
+    "utf-8-validate": "^5.0.5"
   }
 }

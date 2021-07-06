@@ -1,6 +1,6 @@
 const url = require('url');
 
-const WebSocketClient = require('uws');
+const WebSocket = require('ws');
 
 const createPhoenix = require('phoenix');
 const { parseMessage, arnaux, protocol: { frontService, stateService, initService, ui, identity } } = require('message-factory');
@@ -9,8 +9,8 @@ const logger = require('../loggers')();
 const config = require('../config');
 const roles = require('../constants/roles');
 
-const Server = WebSocketClient.Server;
-const phoenix = createPhoenix(WebSocketClient, { uri: config.get('ARNAUX:URL'), timeout: 500 });
+const Server = WebSocket.Server;
+const phoenix = createPhoenix(WebSocket, { uri: config.get('ARNAUX:URL'), timeout: 500 });
 
 const createLobby = require('./lobby');
 const createHall = require('./hall');
@@ -52,9 +52,7 @@ function verifyGunslingerAuth(req) {
     return [uid, sessionAlias, roles.PLAYER, game]; // all gunslingers are PLAYERs
 }
 
-function verifyAuth(ws) {
-    const req = ws.upgradeReq;
-
+function verifyAuth(ws, req) {
     return new Promise((resolve, reject) => {
         parseCookie(req, null, () => {
             const uid = req.cookies['secret'];
@@ -447,8 +445,8 @@ function sendSandboxStatus(sessionId, status) {
     return sendToGameMasters(sessionId, ui.sandboxStatus(status));
 }
 
-function processNewConnection(ws) {
-    return verifyAuth(ws)
+function processNewConnection(ws, req) {
+    return verifyAuth(ws, req)
         .then(([participantId, sessionAlias, role, game]) => {
             const connectionId = addToLobby(ws, participantId, sessionAlias, game, role);
 
@@ -516,7 +514,7 @@ function processServerMessage(message) {
 }
 
 function createWsServer({ port, cookieParser, profileLoader, profileCreator }) {
-    const wss = new Server({ port }, () => {
+    const wss = new Server({ port, maxPayload: 1024 * 10 /** 10 kb */ }, () => {
         logger.info('[ws-server]', 'Server is ready on', port);
 
         wss.on('connection', processNewConnection);
