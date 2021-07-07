@@ -20,7 +20,7 @@ function setQdSpecificCookies(res, session, role, game) {
 app.enable('trust proxy');
 
 app.use(helmet({
-    dnsPrefetchControl: false,
+    contentSecurityPolicy: false,
 }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser);
