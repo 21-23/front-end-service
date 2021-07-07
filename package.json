@@ -4,7 +4,7 @@
   "description": "",
   "main": "./src/index.js",
   "scripts": {
-    "start": "cross-env NODE_PATH=./ DB_URI=qweads node ./src/index.js",
+    "start": "cross-env NODE_PATH=./ node ./src/index.js",
     "debug": "cross-env NODE_PATH=./ node --inspect-brk ./src/index.js",
     "start:container": "cross-env NODE_PATH=./ node ./src/index.js",
     "watch": "cross-env NODE_PATH=./ nodemon ./src/index.js",
