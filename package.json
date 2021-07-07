@@ -23,6 +23,7 @@
   "bugs": "https://github.com/21-23/front-end-service/issues",
   "dependencies": {
     "cookie-parser": "^1.4.5",
+    "cross-env": "^7.0.3",
     "express": "^4.17.1",
     "express-session": "^1.17.2",
     "helmet": "^4.6.0",
@@ -42,7 +43,6 @@
     "ws": "^7.5.2"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
     "eslint": "^7.30.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.23.4",
