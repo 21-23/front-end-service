@@ -18,7 +18,7 @@
   "license": "LGPL-3.0",
   "private": true,
   "engines": {
-    "node": ">=14.17.3"
+    "node": ">=14.17.0"
   },
   "bugs": "https://github.com/21-23/front-end-service/issues",
   "dependencies": {
