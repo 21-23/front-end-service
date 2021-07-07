@@ -4,7 +4,7 @@
   "description": "",
   "main": "./src/index.js",
   "scripts": {
-    "start": "cross-env NODE_PATH=./ node ./src/index.js",
+    "start": "cross-env NODE_PATH=./ DB_URI=qweads node ./src/index.js",
     "debug": "cross-env NODE_PATH=./ node --inspect-brk ./src/index.js",
     "start:container": "cross-env NODE_PATH=./ node ./src/index.js",
     "watch": "cross-env NODE_PATH=./ nodemon ./src/index.js",
@@ -18,36 +18,35 @@
   "license": "LGPL-3.0",
   "private": true,
   "engines": {
-    "node": ">=8.9.3"
+    "node": ">=14.17.3"
   },
   "bugs": "https://github.com/21-23/front-end-service/issues",
   "dependencies": {
     "cookie-parser": "^1.4.5",
-    "cross-env": "^3.1.4",
     "express": "^4.17.1",
     "express-session": "^1.17.2",
-    "helmet": "^3.8.1",
-    "lru-cache": "^4.1.1",
+    "helmet": "^4.6.0",
+    "lru-cache": "^6.0.0",
     "message-factory": "github:21-23/message-factory#v6.6.0",
-    "mongoose": "^4.10.8",
-    "nconf": "^0.8.4",
-    "passport": "^0.3.2",
-    "passport-facebook": "^2.1.1",
+    "mongoose": "^4.13.21",
+    "nconf": "^0.11.3",
+    "passport": "^0.4.1",
+    "passport-facebook": "^3.0.0",
     "passport-github": "^1.1.0",
-    "passport-google-oauth2": "^0.1.6",
+    "passport-google-oauth2": "^0.2.0",
     "passport-twitter": "^1.0.4",
     "phoenix": "github:21-23/phoenix#v2.5.1",
-    "uuid": "^3.1.0",
+    "uuid": "^8.3.2",
     "winston": "2.4.0",
     "winston-mongodb": "3.0.1",
     "ws": "^7.5.2"
   },
   "devDependencies": {
-    "eslint": "^3.14.0",
-    "eslint-config-airbnb-base": "^11.0.1",
-    "eslint-plugin-import": "^2.2.0",
-    "husky": "^0.13.0",
-    "nodemon": "^1.11.0"
+    "cross-env": "^7.0.3",
+    "eslint": "^7.30.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.4",
+    "nodemon": "^2.0.9"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.3",

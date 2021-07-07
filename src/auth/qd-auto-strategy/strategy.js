@@ -2,7 +2,7 @@ const { URL } = require('url');
 const util = require('util');
 
 const passport = require('passport');
-const uuidv4 = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 
 const { generateName } = require('./names');
 
