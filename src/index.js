@@ -7,8 +7,8 @@ const app = require('./app');
 const config = require('./config');
 const initWSServer = require('./ws/ws-server');
 
-mongoose.Promise = global.Promise;
-mongoose.connect(config.get('DB:URI'));
+// mongoose.Promise = global.Promise;
+// mongoose.connect(config.get('DB:URI'));
 
 const port = config.get('PORT:HTTP');
 app.set('port', port);

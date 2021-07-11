@@ -24,6 +24,7 @@ Strategy.prototype.authenticate = function (req, options) {
         return this.redirect(callbackURL.href);
     }
 
+    // TODO: save in cookie provider-specific info
     const user = {
         id: uuidv4(),
         displayName: generateName(),
