@@ -50,7 +50,7 @@ function fillFromDb(uids, profiles) {
     //     .where('uid')
     //     .in(requiredUids)
     //     .exec()
-    const getUserUrl = new url.URL('http://172.31.11.85/users');
+    const getUserUrl = new url.URL('http://172.31.11.85:3000/users');
     getUserUrl.searchParams.set('id', `in.(${requiredUids.join(',')})`);
     console.log('[US] [fillFromDb] getUserUrl', getUserUrl.toString());
 
@@ -92,7 +92,7 @@ module.exports = {
     },
 
     create(opts) {
-        const createUserUrl = new url.URL('http://172.31.11.85/users');
+        const createUserUrl = new url.URL('http://172.31.11.85:3000/users');
         return fetch(createUserUrl.toString(), {
             method: 'post',
             body: JSON.stringify({ auth_provider: opts.provider, auth_provider_id: opts.providerId, display_name: opts.displayName }),
@@ -117,7 +117,7 @@ module.exports = {
     },
 
     findOrCreate(criteria, user) {
-        const getUserUrl = new url.URL('http://172.31.11.85/users');
+        const getUserUrl = new url.URL('http://172.31.11.85:3000/users');
         getUserUrl.searchParams.set('auth_provider', `eq.${criteria.provider}`);
         getUserUrl.searchParams.set('auth_provider_id', `eq.${criteria.providerId}`);
 
@@ -130,7 +130,7 @@ module.exports = {
                 return users[0];
             }
 
-            const createUserUrl = new url.URL('http://172.31.11.85/users');
+            const createUserUrl = new url.URL('http://172.31.11.85:3000/users');
             return fetch(createUserUrl.toString(), {
                 method: 'post',
                 body: JSON.stringify({ auth_provider: user.provider, auth_provider_id: user.providerId, display_name: user.displayName }),
