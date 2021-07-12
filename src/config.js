@@ -4,7 +4,9 @@ const config = nconf.argv().env({ separator: '_' });
 
 config.defaults({
     DB: {
-        URI: 'mongodb://127.0.0.1/fe-db',
+        API: {
+            ORIGIN: 'http://172.31.11.85:3000',
+        },
     },
     PORT: {
         HTTP: 3000,

@@ -43,7 +43,7 @@ strategies.options = {
     },
 };
 
-strategies.providers = strategies.map(strategy => strategy.name);
+strategies.providers = strategies.map((strategy) => strategy.name);
 
 function formatUser(profile, provider) {
     return {
@@ -55,8 +55,7 @@ function formatUser(profile, provider) {
 
 function verifyUser(provider, accessToken, refreshToken, oauthProfile, done) {
     const formattedUser = formatUser(oauthProfile, provider);
-    const criteria = Object.assign({ provider },
-        oauthProfile[Symbol.for('qd-criteria')] || { providerId: oauthProfile.id });
+    const criteria = { provider, providerId: oauthProfile.id };
 
     findOrCreate(criteria, formattedUser)
         .then((user) => {
