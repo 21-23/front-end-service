@@ -9,7 +9,7 @@ const { generateName } = require('./names');
 function Strategy(options, verify) {
     passport.Strategy.call(this);
 
-    this.name = 'qd-auto';
+    this.name = 'qdauto';
     this._callbackURL = options.callbackURL;
     this._verify = verify;
 }
@@ -24,13 +24,9 @@ Strategy.prototype.authenticate = function (req, options) {
         return this.redirect(callbackURL.href);
     }
 
-    // TODO: save in cookie provider-specific info
     const user = {
-        id: uuidv4(),
-        displayName: generateName(),
-    };
-    user[Symbol.for('qd-criteria')] = {
-        uid: req.cookies && req.cookies.secret,
+        id: (req.cookies && req.cookies.qdautoid) || uuidv4(),
+        displayName: (req.cookies && req.cookies.qdautoname) || generateName(),
     };
 
     this._verify(null, null, user, (err, user, info) => {

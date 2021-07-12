@@ -39,7 +39,7 @@ passport.deserializeUser((user, done) => {
     done(null, user);
 });
 
-auth.strategies.forEach(strategy => passport.use(strategy));
+auth.strategies.forEach((strategy) => passport.use(strategy));
 
 app.use(passport.initialize());
 app.use(passport.session());

@@ -34,7 +34,7 @@ const strategies = [
     }, verifyUser.bind(null, 'google')),
 
     new QdAutoStrategy({
-    }, verifyUser.bind(null, 'qd-auto')),
+    }, verifyUser.bind(null, 'qdauto')),
 ];
 
 strategies.options = {

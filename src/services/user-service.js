@@ -26,7 +26,7 @@ function fillFromCache(uids, profiles) {
 }
 
 function getUsersQueryUrl() {
-    const url = new URL(`${config.get('DB:API:ORIGIN')}users`);
+    const url = new URL(`${config.get('DB:API:ORIGIN')}/users`);
 
     url.searchParams.set('select', 'provider:auth_provider,providerId:auth_provider_id,displayName:display_name,uid:id');
 
@@ -112,7 +112,7 @@ module.exports = {
         return fetch(getUserUrl.toString()).then((response) => {
             return response.json();
         }).then((users) => {
-            if (users && users.length === 1) {
+            if (users && users.length > 0) {
                 return users[0];
             }
 
@@ -120,7 +120,7 @@ module.exports = {
             return fetch(createUserUrl.toString(), {
                 method: 'post',
                 body: JSON.stringify({ auth_provider: user.provider, auth_provider_id: user.providerId, display_name: user.displayName }),
-                headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' },
+                headers: { 'Content-Type': 'application/json', Prefer: 'return=representation', Accept: 'application/vnd.pgrst.object+json' },
             }).then((response) => {
                 return response.json();
             });
