@@ -95,7 +95,7 @@ module.exports = {
         return fetch(createUserUrl.toString(), {
             method: 'post',
             body: JSON.stringify({ auth_provider: opts.provider, auth_provider_id: opts.providerId, display_name: opts.displayName }),
-            headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' },
+            headers: { 'Content-Type': 'application/json', Prefer: 'return=representation', Accept: 'application/vnd.pgrst.object+json' },
         }).then((response) => {
             return response.json();
         }).catch((err) => {
