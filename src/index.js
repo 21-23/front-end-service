@@ -1,14 +1,9 @@
 const http = require('http');
 
-const mongoose = require('mongoose');
-
 const logger = require('./loggers')();
 const app = require('./app');
 const config = require('./config');
 const initWSServer = require('./ws/ws-server');
-
-mongoose.Promise = global.Promise;
-mongoose.connect(config.get('DB:URI'));
 
 const port = config.get('PORT:HTTP');
 app.set('port', port);

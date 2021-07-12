@@ -42,6 +42,8 @@ function logOut(req, res) {
 
     res.clearCookie('secret');
     res.clearCookie('sessionId');
+    res.clearCookie('qdautoid');
+    res.clearCookie('qdautoname');
     res.redirect(`/${req.cookies['game'] || ''}`);
 }
 

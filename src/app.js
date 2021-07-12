@@ -39,7 +39,7 @@ passport.deserializeUser((user, done) => {
     done(null, user);
 });
 
-auth.strategies.forEach(strategy => passport.use(strategy));
+auth.strategies.forEach((strategy) => passport.use(strategy));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -90,4 +90,4 @@ app.use(function(err, req, res, next) { //eslint-disable-line
 module.exports = app;
 module.exports.cookieParser = cookieParser;
 module.exports.profileLoader = userService.get;
-module.exports.profileCreator = userService.create;
+module.exports.profileCreator = userService.findOrCreate;
