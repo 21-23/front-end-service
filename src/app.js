@@ -90,4 +90,4 @@ app.use(function(err, req, res, next) { //eslint-disable-line
 module.exports = app;
 module.exports.cookieParser = cookieParser;
 module.exports.profileLoader = userService.get;
-module.exports.profileCreator = userService.create;
+module.exports.profileCreator = userService.findOrCreate;

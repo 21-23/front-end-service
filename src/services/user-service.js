@@ -89,21 +89,6 @@ module.exports = {
             .then(() => profiles);
     },
 
-    create(opts) {
-        const createUserUrl = getUsersQueryUrl();
-
-        return fetch(createUserUrl.toString(), {
-            method: 'post',
-            body: JSON.stringify({ auth_provider: opts.provider, auth_provider_id: opts.providerId, display_name: opts.displayName }),
-            headers: { 'Content-Type': 'application/json', Prefer: 'return=representation', Accept: 'application/vnd.pgrst.object+json' },
-        }).then((response) => {
-            return response.json();
-        }).catch((err) => {
-            logger.error('Failed to create a new user', err);
-            return null;
-        });
-    },
-
     findOrCreate(criteria, user) {
         const getUserUrl = getUsersQueryUrl();
         getUserUrl.searchParams.set('auth_provider', `eq.${criteria.provider}`);

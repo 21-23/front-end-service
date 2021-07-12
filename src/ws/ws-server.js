@@ -461,7 +461,7 @@ function processNewConnection(ws, req) {
 
 function createNewParticipant(userData) {
     // validation?
-    return createProfile(userData)
+    return createProfile(userData, userData)
         .then((user) => {
             logger.info('[ws-server]', 'Create new user');
 
