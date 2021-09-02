@@ -46,6 +46,17 @@ app.use(passport.session());
 
 app.use('/auth', auth.router);
 
+// match /cm, /cm/, /cm/new
+// but not /cmgame/, /cmgame/session
+app.use(/\/cm(\/|$).*/, (req, res) => {
+    if (req.isAuthenticated()) {
+        return res.status(305).set('Content-Type', 'text/html').location('cm/index.html').end();
+    }
+
+    res.cookie('returnUrl', req.originalUrl, { httpOnly: true })
+        .status(401).location('/login.html').end();
+});
+
 app.get('/:game/:session', (req, res) => {
     let role = roles.PLAYER;
     let indexFilename = 'game';
