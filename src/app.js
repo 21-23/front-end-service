@@ -2,10 +2,12 @@ const express = require('express');
 const passport = require('passport');
 const cookieParser = require('cookie-parser')();
 const helmet = require('helmet');
+const bodyParser = require('body-parser');
 
 const auth = require('./auth');
 const config = require('./config');
 const roles = require('./constants/roles');
+const api = require('./api');
 
 const userService = require('./services/user-service');
 
@@ -45,6 +47,18 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use('/auth', auth.router);
+
+const jsonBodyParser = bodyParser.json();
+app.use('/api', (req, res, next) => {
+    // so far - keep all /api calls behind authorization
+    if (!req.isAuthenticated()) {
+        // {"id":"ef6dd6e0-4b3f-4f10-b1d1-fdb93e979924","display_name":"Peppy Montie Montana","auth_provider":"qdauto","auth_provider_id":"b6869617-aa10-43ec-9827-6d060f9c58b8"}
+        // req.user = { uid: 'ef6dd6e0-4b3f-4f10-b1d1-fdb93e979924' };
+        return res.status(401).json({ message: '/api is accessible to authorized clients only' });
+    }
+
+    return next();
+}, jsonBodyParser, api.router);
 
 // match /cm, /cm/, /cm/new
 // but not /cmgame/, /cmgame/session

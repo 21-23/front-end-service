@@ -25,6 +25,7 @@
         "no-console": "off",
         "no-restricted-syntax": ["error", "DebuggerStatement", "ForInStatement", "LabeledStatement", "WithStatement"],
         "dot-notation": "off",
-        "import/no-dynamic-require": "off"
+        "import/no-dynamic-require": "off",
+        "prefer-promise-reject-errors": "off"
     }
 }
