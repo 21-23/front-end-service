@@ -3,6 +3,7 @@ const passport = require('passport');
 const cookieParser = require('cookie-parser')();
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const auth = require('./auth');
 const config = require('./config');
@@ -58,7 +59,7 @@ app.use('/api', (req, res, next) => {
     }
 
     return next();
-}, jsonBodyParser, api.router);
+}, jsonBodyParser, /* cors(), */ api.router);
 
 // match /cm, /cm/, /cm/new
 // but not /cmgame/, /cmgame/session
