@@ -53,7 +53,7 @@ app.use(passport.session());
 app.use('/auth', auth.router);
 
 const jsonBodyParser = bodyParser.json();
-const coreMiddleware = cors();
+const corsMiddleware = cors();
 app.use('/api', (req, res, next) => {
     // so far - keep all /api calls behind authorization
     if (!req.isAuthenticated()) {
@@ -67,7 +67,7 @@ app.use('/api', (req, res, next) => {
     return next();
 }, (req, res, next) => {
     if (LOCAL) {
-        return coreMiddleware(req, res, next);
+        return corsMiddleware(req, res, next);
     }
 
     return next();
