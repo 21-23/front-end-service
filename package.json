@@ -22,7 +22,9 @@
   },
   "bugs": "https://github.com/21-23/front-end-service/issues",
   "dependencies": {
+    "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
     "cross-env": "^7.0.3",
     "express": "^4.17.1",
     "express-session": "^1.17.2",

@@ -31,6 +31,7 @@ config.defaults({
         DBURI: '',
         FILE: true,
     },
+    LOCAL: false,
 });
 
 module.exports = config;
