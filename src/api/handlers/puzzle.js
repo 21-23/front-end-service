@@ -24,7 +24,7 @@ function ensurePuzzleDefaults(options) {
         timeLimit: Number.isFinite(options.timeLimit) ? secondsToInterval(options.timeLimit) : secondsToInterval(180),
         bannedCharacters: options.bannedCharacters || [],
         sandboxTimeLimit: Number.isFinite(options.sandboxTimeLimit) ? secondsToInterval(options.sandboxTimeLimit) : secondsToInterval(1),
-        solutionLengthLimit: options.solutionLengthLimit || undefined,
+        solutionLengthLimit: Number.isFinite(options.solutionLengthLimit) && options.solutionLengthLimit > 0 ? options.solutionLengthLimit : undefined,
     };
 }
 
