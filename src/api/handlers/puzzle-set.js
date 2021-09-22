@@ -8,11 +8,7 @@ exports.createPuzzleSet = async function createPuzzleSet(options) {
     }
 
     const puzzleSet = await puzzleSetService.createPuzzleSet(options.name, options.order);
-
-    for (const puzzleId of options.order) {
-        // eslint-disable-next-line no-await-in-loop
-        await puzzleSetService.addPuzzleToSet(puzzleSet.id, puzzleId);
-    }
+    await puzzleSetService.addPuzzlesToSet(puzzleSet.id, options.order);
 
     return puzzleSet;
 };
