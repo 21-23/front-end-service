@@ -32,22 +32,6 @@ module.exports = {
         });
     },
 
-    addPuzzleToSet(puzzleSetId, puzzleId) {
-        const url = new URL(`${config.get('DB:API:ORIGIN')}/puzzle_set_puzzles`);
-
-        return fetch(url.toString(), {
-            method: 'post',
-            body: JSON.stringify({ puzzle_set: puzzleSetId, puzzle: puzzleId }),
-            headers: DEFAULT_HEADERS,
-        }).then(handleResponse).catch((error) => {
-            logger.error('Failed to addPuzzleToSet', error);
-
-            const clientError = new Error('Failed to add puzzle to puzzle set');
-            clientError.status = 500;
-            return Promise.reject(clientError);
-        });
-    },
-
     addPuzzlesToSet(puzzleSetId, puzzleIds) {
         const url = new URL(`${config.get('DB:API:ORIGIN')}/puzzle_set_puzzles`);
 
@@ -56,7 +40,7 @@ module.exports = {
             body: JSON.stringify(puzzleIds.map((puzzleId) => ({ puzzle_set: puzzleSetId, puzzle: puzzleId }))),
             headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' },
         }).then(handleResponse).catch((error) => {
-            logger.error('Failed to addPuzzleToSet', error);
+            logger.error('Failed to addPuzzlesToSet', error);
 
             const clientError = new Error('Failed to add puzzle to puzzle set');
             clientError.status = 500;
