@@ -88,4 +88,21 @@ apiV1Router.post('/createPuzzleSet', async (req, res) => {
     }
 });
 
+apiV1Router.get('/listOwnPuzzles', async (req, res) => {
+    const required = ['game'];
+    const missing = required.filter((prop) => {
+        return !req.query[prop];
+    });
+    if (missing.length > 0) {
+        return res.status(400).json({ message: 'Query params are missing', required, missing });
+    }
+
+    try {
+        const puzzles = await puzzleHandlers.listOwnPuzzles({ author: req.user.uid, type: req.query.game });
+        return res.json({ puzzles });
+    } catch (error) {
+        return res.status(error.status || 500).json({ message: 'Failed to list puzzles', error: error.message });
+    }
+});
+
 exports.router = apiV1Router;
