@@ -17,7 +17,10 @@ function handleResponse(response) {
     });
 }
 
+const FULL_PUZZLE_SELECTOR = '*,author(*),puzzle_tests_puzzle_fkey(*),puzzle_default_tests(*),puzzle_constraints(*)';
+
 module.exports = {
+    FULL_PUZZLE_SELECTOR,
     getPuzzleTypes() {
         const url = new URL(`${config.get('DB:API:ORIGIN')}/puzzle_types`);
 
@@ -136,7 +139,7 @@ module.exports = {
         if (type) {
             url.searchParams.set('type', `eq.${type}`);
         }
-        url.searchParams.set('select', '*,author(*),puzzle_tests_puzzle_fkey(*),puzzle_default_tests(*),puzzle_constraints(*)');
+        url.searchParams.set('select', FULL_PUZZLE_SELECTOR);
 
         return fetch(url.toString()).then(handleResponse).catch((error) => {
             logger.error('Failed to listPuzzles', error);

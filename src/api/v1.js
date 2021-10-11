@@ -105,4 +105,21 @@ apiV1Router.get('/listOwnPuzzles', async (req, res) => {
     }
 });
 
+apiV1Router.get('/getFullPuzzleSet', async (req, res) => {
+    const required = ['setId'];
+    const missing = required.filter((prop) => {
+        return !req.query[prop];
+    });
+    if (missing.length > 0) {
+        return res.status(400).json({ message: 'Query params are missing', required, missing });
+    }
+
+    try {
+        const puzzleSet = await puzzleSetHandlers.getFullPuzzleSet({ author: req.user.uid, setId: req.query.setId });
+        return res.json({ puzzleSet });
+    } catch (error) {
+        return res.status(error.status || 500).json({ message: 'Failed to get puzzle set', error: error.message });
+    }
+});
+
 exports.router = apiV1Router;

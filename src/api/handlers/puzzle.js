@@ -59,6 +59,7 @@ function mapDbFullPuzzleToFullPuzzle(fullPuzzle) {
         },
     };
 }
+exports.mapDbFullPuzzleToFullPuzzle = mapDbFullPuzzleToFullPuzzle;
 
 exports.createPuzzle = async function createPuzzle(options) {
     const puzzleTypes = await puzzleService.getPuzzleTypes();
