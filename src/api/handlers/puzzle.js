@@ -28,6 +28,39 @@ function ensurePuzzleDefaults(options) {
     };
 }
 
+function mapDbFullPuzzleToFullPuzzle(fullPuzzle) {
+    const defaultTest = fullPuzzle.puzzle_default_tests[0];
+    const puzzleConstraints = fullPuzzle.puzzle_constraints[0];
+    const tests = fullPuzzle.puzzle_tests_puzzle_fkey.reduce((tests, test) => {
+        if (test.id === defaultTest.test) {
+            tests.default = { id: test.id, input: test.input, expected: test.expected };
+        } else {
+            tests.hidden.push({ id: test.id, input: test.input, expected: test.expected });
+        }
+        return tests;
+    }, { default: null, hidden: [] });
+
+    return {
+        id: fullPuzzle.id,
+        type: fullPuzzle.type,
+        name: fullPuzzle.name,
+        description: fullPuzzle.description,
+        solution: fullPuzzle.solution,
+        author: {
+            id: fullPuzzle.author.id,
+            name: fullPuzzle.author.display_name,
+        },
+        tests,
+        constraints: {
+            timeLimit: intervalToSeconds(puzzleConstraints.time_limit),
+            bannedCharacters: puzzleConstraints.banned_characters,
+            sandboxTimeLimit: intervalToSeconds(puzzleConstraints.sandbox_time_limit),
+            solutionLengthLimit: puzzleConstraints.solution_length_limit,
+        },
+    };
+}
+exports.mapDbFullPuzzleToFullPuzzle = mapDbFullPuzzleToFullPuzzle;
+
 exports.createPuzzle = async function createPuzzle(options) {
     const puzzleTypes = await puzzleService.getPuzzleTypes();
     const puzzleType = puzzleTypes.find((puzzleType) => puzzleType.name === options.type);
@@ -78,35 +111,11 @@ exports.getFullPuzzle = async function getFullPuzzle({ puzzleId }) {
         throw error;
     }
 
-    const defaultTest = fullPuzzle.puzzle_default_tests[0];
-    const puzzleConstraints = fullPuzzle.puzzle_constraints[0];
-    const tests = fullPuzzle.puzzle_tests_puzzle_fkey.reduce((tests, test) => {
-        if (test.id === defaultTest.test) {
-            tests.default = { id: test.id, input: test.input, expected: test.expected };
-        } else {
-            tests.hidden.push({ id: test.id, input: test.input, expected: test.expected });
-        }
-        return tests;
-    }, { default: null, hidden: [] });
+    return mapDbFullPuzzleToFullPuzzle(fullPuzzle);
+};
 
-    const puzzle = {
-        id: fullPuzzle.id,
-        type: fullPuzzle.type,
-        name: fullPuzzle.name,
-        description: fullPuzzle.description,
-        solution: fullPuzzle.solution,
-        author: {
-            id: fullPuzzle.author.id,
-            name: fullPuzzle.author.display_name,
-        },
-        tests,
-        constraints: {
-            timeLimit: intervalToSeconds(puzzleConstraints.time_limit),
-            bannedCharacters: puzzleConstraints.banned_characters,
-            sandboxTimeLimit: intervalToSeconds(puzzleConstraints.sandbox_time_limit),
-            solutionLengthLimit: puzzleConstraints.solution_length_limit,
-        },
-    };
+exports.listOwnPuzzles = async function listOwnPuzzles({ author, type }) {
+    const puzzles = await puzzleService.listPuzzles(author, null, type);
 
-    return puzzle;
+    return puzzles.map(mapDbFullPuzzleToFullPuzzle);
 };

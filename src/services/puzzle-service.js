@@ -17,7 +17,10 @@ function handleResponse(response) {
     });
 }
 
+const FULL_PUZZLE_SELECTOR = '*,author(*),puzzle_tests_puzzle_fkey(*),puzzle_default_tests(*),puzzle_constraints(*)';
+
 module.exports = {
+    FULL_PUZZLE_SELECTOR,
     getPuzzleTypes() {
         const url = new URL(`${config.get('DB:API:ORIGIN')}/puzzle_types`);
 
@@ -44,17 +47,7 @@ module.exports = {
     },
 
     getFullPuzzle(puzzleId) {
-        const url = new URL(`${config.get('DB:API:ORIGIN')}/puzzles`);
-        url.searchParams.set('id', `eq.${puzzleId}`);
-        url.searchParams.set('select', '*,author(*),puzzle_tests_puzzle_fkey(*),puzzle_default_tests(*),puzzle_constraints(*)');
-
-        return fetch(url.toString()).then(handleResponse).catch((error) => {
-            logger.error('Failed to getFullPuzzle', error);
-
-            const clientError = new Error('Failed to get full puzzle');
-            clientError.status = 500;
-            return Promise.reject(clientError);
-        }).then((puzzles) => {
+        return module.exports.listPuzzles(null, puzzleId).then((puzzles) => {
             if (Array.isArray(puzzles) && puzzles.length > 0) {
                 return puzzles[0];
             }
@@ -130,6 +123,28 @@ module.exports = {
             logger.error('Failed to setPuzzleConstraints', error);
 
             const clientError = new Error('Failed to set puzzle constraints');
+            clientError.status = 500;
+            return Promise.reject(clientError);
+        });
+    },
+
+    listPuzzles(authorId, puzzleId, type) {
+        const url = new URL(`${config.get('DB:API:ORIGIN')}/puzzles`);
+        if (authorId) {
+            url.searchParams.set('author', `eq.${authorId}`);
+        }
+        if (puzzleId) {
+            url.searchParams.set('id', `eq.${puzzleId}`);
+        }
+        if (type) {
+            url.searchParams.set('type', `eq.${type}`);
+        }
+        url.searchParams.set('select', FULL_PUZZLE_SELECTOR);
+
+        return fetch(url.toString()).then(handleResponse).catch((error) => {
+            logger.error('Failed to listPuzzles', error);
+
+            const clientError = new Error('Failed to list puzzles');
             clientError.status = 500;
             return Promise.reject(clientError);
         });
