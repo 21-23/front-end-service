@@ -42,7 +42,5 @@ exports.getFullPuzzleSet = async function getFullPuzzleSet({ setId }) {
 exports.listOwnPuzzleSets = async function listOwnPuzzleSets() {
     const fullPuzzleSets = await puzzleSetService.listPuzzleSets();
 
-    // TODO
-
     return fullPuzzleSets.map(mapDbFullPuzzleSetToFullPuzzleSet);
 };
