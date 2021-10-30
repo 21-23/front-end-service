@@ -5,7 +5,7 @@ const config = nconf.argv().env({ separator: '_' });
 config.defaults({
     DB: {
         API: {
-            ORIGIN: 'http://172.31.11.85:3000',
+            ORIGIN: 'http://localhost:3001',
         },
     },
     PORT: {
