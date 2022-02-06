@@ -2,6 +2,7 @@ const express = require('express');
 const userHandlers = require('./handlers/user');
 const puzzleHandlers = require('./handlers/puzzle');
 const puzzleSetHandlers = require('./handlers/puzzle-set');
+const puzzleSessionHandlers = require('./handlers/puzzle-session');
 
 const apiV1Router = express.Router();
 
@@ -136,6 +137,24 @@ apiV1Router.get('/listOwnSets', async (req, res) => {
         return res.json({ puzzleSets });
     } catch (error) {
         return res.status(error.status || 500).json({ message: 'Failed to list puzzle sets', error: error.message });
+    }
+});
+
+apiV1Router.post('/createPuzzleSession', async (req, res) => {
+    const required = ['name', 'puzzleSetId', 'alias', 'date'];
+
+    const missing = required.filter((prop) => {
+        return !req.body[prop];
+    });
+    if (missing.length > 0) {
+        return res.status(400).json({ message: 'Request body params are missing', required, missing });
+    }
+
+    try {
+        const puzzleSession = await puzzleSessionHandlers.createPuzzleSession(req.body);
+        return res.json({ puzzleSession });
+    } catch (error) {
+        return res.status(error.status || 500).json({ message: 'Failed to create puzzle set', error: error.message });
     }
 });
 
